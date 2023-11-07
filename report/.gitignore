@@ -34,3 +34,5 @@ samples/*.cbx
 samples/*.dbx
 *.fdb_latexmk
 *.fls
+*.gz
+*.pdf
