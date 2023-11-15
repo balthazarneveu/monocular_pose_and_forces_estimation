@@ -22,4 +22,6 @@ cd ceres-solver
 mkdir ceres-bin
 cd ceres-bin
 cmake ../../ceres-solver -DCMAKE_CUDA_ARCHITECTURES=native -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc
+make -j3
+make install
 ```
