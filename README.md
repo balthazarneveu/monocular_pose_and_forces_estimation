@@ -11,3 +11,15 @@ Review of the paper Estimating 3D Motion and Forces of Person-Object Interaction
 - Authors:
     - [Balthazar Neveu](https://github.com/balthazarneveu)
     - [Matthieu Dinot](https://github.com/mattx20)
+
+
+
+## Setup
+### CERES setup
+```bash
+git clone https://ceres-solver.googlesource.com/ceres-solver
+cd ceres-solver
+mkdir ceres-bin
+cd ceres-bin
+cmake ../../ceres-solver -DCMAKE_CUDA_ARCHITECTURES=native -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc
+```
