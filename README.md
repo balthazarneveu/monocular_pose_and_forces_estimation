@@ -15,7 +15,7 @@ Review of the paper Estimating 3D Motion and Forces of Person-Object Interaction
 
 
 ## Setup
-### CERES setup
+#### CERES setup
 ```bash
 git clone https://ceres-solver.googlesource.com/ceres-solver
 cd ceres-solver
@@ -24,4 +24,10 @@ cd ceres-bin
 cmake ../../ceres-solver -DCMAKE_CUDA_ARCHITECTURES=native -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc
 make -j3
 make install
+```
+
+#### Pybind
+Install pybind11.
+```bash
+sudo apt-get install pybind11-dev
 ```
