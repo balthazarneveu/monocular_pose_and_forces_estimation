@@ -15,6 +15,26 @@ Review of the paper Estimating 3D Motion and Forces of Person-Object Interaction
 
 
 ## Setup
+#### Setup projectyl
+```bash
+git clone git@github.com:balthazarneveu/monocular_pose_and_forces_estimation.git
+cd monocular_pose_and_forces_estimation
+pip install -e .
+```
+
+#### Tools
+```bash
+python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed -t 3.2 3.4   --resize 0.2 --skip-existing
+```
+- `-i` regex or list of videos
+- `-o` output folder (*automatically created if not present*)
+- `--trim t1 t2`: trim the videos from t1 to t2 in seconds
+- `--resize`: resize ratio
+
+
+-----
+
+## Extra
 ### CERES setup
 ```bash
 git clone https://ceres-solver.googlesource.com/ceres-solver

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "projectyl"
+version = "0.0.0"
+authors = [
+  { name="Balthazar Neveu", email="balthazarneveu@gmail.com" },
+]
+description = "Inverse dynamics estimation from monocular videos"
+readme = "readme.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/balthazarneveu/monocular_pose_and_forces_estimation"
+"Bug Tracker" = "https://github.com/balthazarneveu/monocular_pose_and_forces_estimation/issues"

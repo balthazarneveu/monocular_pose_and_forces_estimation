@@ -1,0 +1,8 @@
+moviepy
+batch-processing
+opencv-python
+numpy
+scipy
+matplotlib
+torch
+torchvision
