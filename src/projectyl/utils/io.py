@@ -1,5 +1,17 @@
 from pathlib import Path
 import cv2 as cv
+import yaml
+import json
+import logging
+YAML_SUPPORT = True
+YAML_NOT_DETECTED_MESSAGE = "yaml is not installed, consider installing it by pip install PyYAML"
+try:
+    import yaml
+    from yaml.loader import SafeLoader
+except:
+    YAML_SUPPORT = False
+    logging.warning(YAML_NOT_DETECTED_MESSAGE)
+
 class Image:
     @staticmethod
     def load(path: Path):
@@ -12,3 +24,28 @@ class Image:
     def write(path:Path, img):
         image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
         cv.imwrite(str(path), img)
+
+class Dump:
+    @staticmethod
+    def load_yaml(path:Path,) -> dict:
+        assert YAML_SUPPORT, YAML_NOT_DETECTED_MESSAGE
+        with open(path) as file:
+            params = yaml.load(file, Loader=SafeLoader)
+        return params
+    
+    @staticmethod
+    def save_yaml(data: dict, path:Path, **kwargs):
+        assert YAML_SUPPORT, YAML_NOT_DETECTED_MESSAGE
+        with open(path, 'w') as outfile:
+            yaml.dump(data, outfile, **kwargs)
+    
+    @staticmethod
+    def load_json(path:Path,) -> dict:
+        with open(path) as file:
+            params = json.load(file)
+        return params
+
+    @staticmethod
+    def save_json(data: dict, path:Path):
+        with open(path, 'w') as outfile:
+            json.dump(data, outfile)
