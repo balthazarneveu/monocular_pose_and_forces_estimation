@@ -2,11 +2,11 @@ import argparse
 import sys
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args, get_trim
-from projectyl.video.decoder import save_video_frames
+from projectyl.algo.background_substraction import bg_substract
 from batch_processing import Batch
 import logging
-
-
+from interactive_pipe.data_objects.image import Image
+import numpy as np
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
@@ -16,15 +16,20 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser.add_argument("-skip", "--skip-existing", action="store_true", help="skip existing processed folders")
     return batch.parse_args(parser)
 
-
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     trim = get_trim(args)
     if output.exists() and args.skip_existing:
         logging.warning(f"Results already exist - skip processing  {output}")
     else:
+        # Moviepy takes a while to load, load only on demand
+        from projectyl.video.decoder import save_video_frames
         logging.warning(f"Overwriting results - use --skip-existing to skip processing  {output}")
         output.mkdir(parents=True, exist_ok=True)
         save_video_frames(input, output, trim=trim, resize=args.resize)
+    all_frames = sorted(list(output.glob("*.*g")))
+    sequence = np.array([Image.load_image(img).data for img in all_frames])
+    bg_substract(sequence, interactive=True)
+
 
 def main(argv):
     batch = Batch(argv)

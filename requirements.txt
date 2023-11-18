@@ -1,5 +1,6 @@
 moviepy
 batch-processing
+interactive-pipe
 opencv-python
 numpy
 scipy
