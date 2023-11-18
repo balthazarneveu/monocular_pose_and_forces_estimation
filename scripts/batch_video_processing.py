@@ -10,6 +10,7 @@ import numpy as np
 from projectyl.algo.interactive_segmentation import interactive_sam
 from projectyl.algo.segmentation import segment_frames
 from projectyl.utils.io import Dump
+from projectyl.utils.interactive import interactive_trimming
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
@@ -18,7 +19,7 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser.add_argument("-mp", "--multi-processing", action="store_true", help="Enable multiprocessing - Warning with GPU - use -j2")    
     parser.add_argument("-skip", "--skip-existing", action="store_true", help="skip existing processed folders")
     parser.add_argument_group("algorithm")
-    parser.add_argument("-A", "--algo", nargs="+", choices=["bgsub", "sam"])
+    parser.add_argument("-A", "--algo", nargs="+", choices=["bgsub", "sam", "trim"])
     return batch.parse_args(parser)
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
@@ -33,7 +34,18 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         save_video_frames(input, output, trim=trim, resize=args.resize)
     algo_list = args.algo
     all_frames = sorted(list(output.glob("*.*g")))
-    sequence = np.array([Image.load_image(img).data for img in all_frames])
+    
+    if "trim" in algo_list:
+        trim_path=output/"trim.yaml"
+        if trim_path.exists() and args.skip_existing:
+            logging.info("Trim file already exists")
+        else:
+            sequence = np.array([Image.load_image(img).data for img in all_frames])
+            interactive_trimming(sequence, trim_path=output/trim_path)
+        trim_conf = Dump.load_yaml(trim_path)
+        sequence = np.array([Image.load_image(img).data for img in all_frames[trim_conf["start"]: trim_conf["end"]]])
+    else:
+        sequence = np.array([Image.load_image(img).data for img in all_frames])
     if "bgsub" in algo_list:
         bg_substract(sequence, interactive=True)
     if "sam" in algo_list:
