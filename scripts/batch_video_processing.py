@@ -7,6 +7,7 @@ from batch_processing import Batch
 import logging
 from interactive_pipe.data_objects.image import Image
 import numpy as np
+from projectyl.algo.interactive_segmentation import interactive_sam
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
@@ -14,6 +15,8 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
     add_video_parser_args(parser)
     parser.add_argument("-mp", "--multi-processing", action="store_true", help="Enable multiprocessing - Warning with GPU - use -j2")    
     parser.add_argument("-skip", "--skip-existing", action="store_true", help="skip existing processed folders")
+    parser.add_argument_group("algorithm")
+    parser.add_argument("-A", "--algo", nargs="+", choices=["bgsub", "sam"])
     return batch.parse_args(parser)
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
@@ -26,9 +29,13 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         logging.warning(f"Overwriting results - use --skip-existing to skip processing  {output}")
         output.mkdir(parents=True, exist_ok=True)
         save_video_frames(input, output, trim=trim, resize=args.resize)
+    algo_list = args.algo
     all_frames = sorted(list(output.glob("*.*g")))
     sequence = np.array([Image.load_image(img).data for img in all_frames])
-    bg_substract(sequence, interactive=True)
+    if "bgsub" in algo_list:
+        bg_substract(sequence, interactive=True)
+    if "sam" in algo_list:
+        interactive_sam(sequence)
 
 
 def main(argv):
