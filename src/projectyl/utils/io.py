@@ -23,8 +23,8 @@ class Image:
 
     @staticmethod
     def write(path:Path, img):
-        image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
-        cv.imwrite(str(path), img)
+        image = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        cv.imwrite(str(path), image)
 
 class Dump:
     @staticmethod
