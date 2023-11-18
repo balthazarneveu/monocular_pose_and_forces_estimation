@@ -1,11 +1,11 @@
 from pathlib import Path
-from moviepy.editor import VideoFileClip
 from typing import Optional
 import logging
+import cv2
 from projectyl.utils.io import Image
 
-def save_video_frames(input_path: Path, output_folder: Path, trim=None, resize: Optional[float]=None):
-    # video = VideoFileClip(str(input_path))
+def save_video_frames_moviepy(input_path: Path, output_folder: Path, trim=None, resize: Optional[float]=None):
+    from moviepy.editor import VideoFileClip
     with VideoFileClip(str(input_path)) as video:
         if resize is not None:
             video = video.resize(resize)
@@ -33,3 +33,38 @@ def save_video_frames(input_path: Path, output_folder: Path, trim=None, resize: 
             if start is not None and frame_idx<= start:
                 continue
             Image.write(output_folder/f'{video_name}_{frame_idx:05d}.jpg', frame)
+
+
+def save_video_frames(input_path: Path, output_folder: Path, trim=None, resize: Optional[float]=None):
+    video_name = input_path.stem
+    video = cv2.VideoCapture(str(input_path))
+    fps = video.get(cv2.CAP_PROP_FPS)
+    start, end = None, None
+    if trim is not None:
+        assert len(trim) == 2
+        start, end = trim
+        if start is not None:
+            start = int(start*fps)
+        if end is not None:
+            end = int(end*fps)
+    if (video.isOpened()== False): 
+        logging.warning("Error opening video stream or file")
+    frame_idx = -1
+    while(video.isOpened()):
+        # Capture frame-by-frame
+        ret, frame = video.read()
+        frame_idx+=1
+        if frame_idx%10==0:
+            print(frame_idx)
+        if not ret:
+            break
+        if end is not None and frame_idx>end:
+            logging.info(f"LAST FRAME REACHED! {frame_idx}>{end}")
+            break
+        if start is not None and frame_idx<= start:
+            continue
+        logging.infof("{frame_idx}, frame.shape")
+        rs_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if resize is not None:
+            rs_frame = cv2.resize(rs_frame, None, fx=resize, fy=resize)
+        Image.write(output_folder/f'{video_name}_{frame_idx:05d}.jpg', rs_frame)
