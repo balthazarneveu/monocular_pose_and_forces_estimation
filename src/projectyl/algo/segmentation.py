@@ -1,7 +1,9 @@
 from pathlib import Path
-from segment_anything import sam_model_registry
+from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 import torch
 from projectyl import root_dir
+from typing import Union, List, Optional
+import numpy as np
 
 MODEL_DIR = root_dir/"model"
 MODEL_DICT = {
@@ -27,4 +29,15 @@ def load_sam_model(model_directory: Path =MODEL_DIR, model_name: str="vit_b", de
     sam.to(device)
     return sam
 
-    
+
+
+def segment_frames(input_list: Union[List[Path], np.ndarray], model: Optional[torch.nn.Module]=None):
+    if model is None:
+        model = load_sam_model()
+    mask_generator = SamAutomaticMaskGenerator(model)
+    mask_list = []
+    for fr_idx in range(len(input_list)):
+        image = (np.round(input_list[fr_idx])*255).astype(np.uint8)
+        masks = mask_generator.generate(image)
+        mask_list.append(masks)
+    return mask_list
