@@ -4,6 +4,7 @@ import torch
 from projectyl import root_dir
 from typing import Union, List, Optional
 import numpy as np
+from tqdm import tqdm
 
 MODEL_DIR = root_dir/"model"
 MODEL_DICT = {
@@ -36,8 +37,8 @@ def segment_frames(input_list: Union[List[Path], np.ndarray], model: Optional[to
         model = load_sam_model()
     mask_generator = SamAutomaticMaskGenerator(model)
     mask_list = []
-    for fr_idx in range(len(input_list)):
+    for fr_idx in tqdm(range(len(input_list))):
         image = (np.round(input_list[fr_idx])*255).astype(np.uint8)
         masks = mask_generator.generate(image)
-        mask_list.append(masks)
+        mask_list.append([masks])
     return mask_list

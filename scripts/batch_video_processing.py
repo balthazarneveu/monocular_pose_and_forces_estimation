@@ -8,6 +8,8 @@ import logging
 from interactive_pipe.data_objects.image import Image
 import numpy as np
 from projectyl.algo.interactive_segmentation import interactive_sam
+from projectyl.algo.segmentation import segment_frames
+from projectyl.utils.io import Dump
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
@@ -35,8 +37,13 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     if "bgsub" in algo_list:
         bg_substract(sequence, interactive=True)
     if "sam" in algo_list:
-        interactive_sam(sequence)
-
+        mask_path = output/"sam_masks.pkl"
+        if mask_path.exists() and args.skip_existing:
+            masks = Dump.load_pickle(mask_path)
+        else:
+            masks = segment_frames(sequence)
+            Dump.save_pickle(masks, mask_path)
+        interactive_sam(sequence, masks)
 
 def main(argv):
     batch = Batch(argv)
