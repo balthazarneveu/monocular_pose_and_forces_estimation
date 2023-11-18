@@ -2,26 +2,24 @@ from projectyl.algo.segmentation import load_sam_model
 from segment_anything import SamAutomaticMaskGenerator
 from interactive_pipe import interactive, interactive_pipeline
 import numpy as np
-from projectyl.utils.interactive import frame_selector
-
-def load_mask_gen():
-    model = load_sam_model()
-    mask_generator = SamAutomaticMaskGenerator(model)
-    return mask_generator
+import cv2 as cv
+from projectyl.utils.interactive import frame_selector, frame_extractor
 
 
-def segment_something(mask_generator, frame):
-    image = (np.round(frame)*255).astype(np.uint8)
-    masks = mask_generator.generate(image)
-    print(masks)
+@interactive(mask_index=(0, [0, 50]))
+def display_masks(image, seg_list, mask_index=0):
+    seg_list_sorted = sorted(seg_list, key=(lambda x: x['area']), reverse=True)
+    seg = seg_list_sorted[min(mask_index, len(seg_list)-1)]
+    mask_selected = np.array(seg["segmentation"]).astype(np.uint8)
+    masked_img = cv.bitwise_and(image, image, mask=mask_selected)
+    return masked_img
 
-
-def sam_pipeline(sequence):
-    mg = load_mask_gen()
+def sam_pipeline(sequence, masks):
     frame = frame_selector(sequence)
-    segment_something(mg, frame)
-    return frame
+    mask = frame_extractor(masks)
+    overlay = display_masks(frame, mask)
+    return frame, overlay
 
-def interactive_sam(sequence):
-    interactive_pipeline(gui="qt", cache=True)(sam_pipeline)
-    sam_pipeline(sequence)
+def interactive_sam(sequence, masks):
+    interactive_sam_pipeline = interactive_pipeline(gui="qt", cache=False)(sam_pipeline)
+    interactive_sam_pipeline(sequence, masks)
