@@ -3,6 +3,7 @@ import cv2 as cv
 import yaml
 import json
 import logging
+import pickle
 YAML_SUPPORT = True
 YAML_NOT_DETECTED_MESSAGE = "yaml is not installed, consider installing it by pip install PyYAML"
 try:
@@ -49,3 +50,14 @@ class Dump:
     def save_json(data: dict, path:Path):
         with open(path, 'w') as outfile:
             json.dump(data, outfile)
+    
+    @staticmethod
+    def load_pickle(path:Path,) -> dict:
+        with open(path, "rb") as file:
+            params = pickle.load(file)
+        return params
+
+    @staticmethod
+    def save_pickle(data: dict, path:Path):
+        with open(path, 'wb') as outfile:
+            pickle.dump(data, outfile)
