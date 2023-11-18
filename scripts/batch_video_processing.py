@@ -10,21 +10,22 @@ import numpy as np
 from projectyl.algo.interactive_segmentation import interactive_sam
 from projectyl.algo.segmentation import segment_frames
 from projectyl.utils.io import Dump
-from projectyl.utils.interactive import interactive_trimming
+from projectyl.utils.interactive import interactive_trimming, interactive_visualize
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     add_video_parser_args(parser)
     parser.add_argument("-mp", "--multi-processing", action="store_true", help="Enable multiprocessing - Warning with GPU - use -j2")    
-    parser.add_argument("-skip", "--skip-existing", action="store_true", help="skip existing processed folders")
+    parser.add_argument("--override", action="store_true", help="overwrite processed results")
     parser.add_argument_group("algorithm")
-    parser.add_argument("-A", "--algo", nargs="+", choices=["bgsub", "sam", "trim"])
+    parser.add_argument("-A", "--algo", nargs="+", choices=["bgsub", "sam", "trim", "viewer"])
     return batch.parse_args(parser)
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     trim = get_trim(args)
-    if output.exists() and args.skip_existing:
+    skip_existing = not args.override
+    if output.exists() and skip_existing:
         logging.warning(f"Results already exist - skip processing  {output}")
     else:
         # Moviepy takes a while to load, load only on demand
@@ -37,7 +38,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     
     if "trim" in algo_list:
         trim_path=output/"trim.yaml"
-        if trim_path.exists() and args.skip_existing:
+        if trim_path.exists() and skip_existing:
             logging.info("Trim file already exists")
         else:
             sequence = np.array([Image.load_image(img).data for img in all_frames])
@@ -46,11 +47,14 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         sequence = np.array([Image.load_image(img).data for img in all_frames[trim_conf["start"]: trim_conf["end"]]])
     else:
         sequence = np.array([Image.load_image(img).data for img in all_frames])
+
+    if "viewer" in algo_list:
+        interactive_visualize(sequence)
     if "bgsub" in algo_list:
         bg_substract(sequence, interactive=True)
     if "sam" in algo_list:
         mask_path = output/"sam_masks.pkl"
-        if mask_path.exists() and args.skip_existing:
+        if mask_path.exists() and skip_existing:
             masks = Dump.load_pickle(mask_path)
         else:
             masks = segment_frames(sequence)

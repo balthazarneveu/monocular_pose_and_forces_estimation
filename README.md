@@ -24,13 +24,14 @@ pip install -e .
 
 #### Tools
 ```bash
-python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed -t 3.2 3.4   --resize 0.2 --skip-existing
+python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed -t 3.2 3.4   --resize 0.2
 ```
 - `-i` regex or list of videos
 - `-o` output folder (*automatically created if not present*)
-- `--trim t1 t2`: trim the videos from t1 to t2 in seconds
 - `--resize`: resize ratio
-
+- `-A` to pick up an algo (including a simple `-A viewer` will lanch a frame by frame viewer with zoom in capabilities)
+> `--trim t1 t2`: trim the videos from t1 to t2 in seconds  *not recommended*
+> `--override` can be used to recompute images and ignored previous results.
 
 -----
 
