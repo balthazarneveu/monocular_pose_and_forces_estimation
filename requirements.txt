@@ -7,4 +7,6 @@ scipy
 matplotlib
 torch
 torchvision
-yaml
+pyyaml
+pin
+meshcat
