@@ -25,16 +25,18 @@ END_EFFECTOR_FRAME_LENGTH = 0.1
 # Arm definition
 class ArmRobot(RobotWrapper):
 
-    def __init__(self, upper_arm_length:float, forearm_length: float, verbose: bool=False):
+    def __init__(self, upper_arm_length:float, forearm_length: float, headless: bool=False, verbose: bool=False):
 
         # Initialize the arm model
         model = self._build_model(upper_arm_length, forearm_length)
 
         # Initialize the arm collision model 
-        collision_model = GeometryModel() # Empty, useless apriori
+        collision_model = GeometryModel() # Useless apriori, but cannot be None (else error with viz)
 
         # Initialize the arm visual model
-        visual_model = self._build_visual_model(upper_arm_length, forearm_length, model)
+        visual_model = None
+        if not headless:
+            visual_model = self._build_visual_model(upper_arm_length, forearm_length, model)
 
         super().__init__(model, collision_model, visual_model, verbose)
 
