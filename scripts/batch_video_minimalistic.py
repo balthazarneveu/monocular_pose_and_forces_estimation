@@ -8,55 +8,43 @@ import sys
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args, get_trim
 from projectyl.utils.interactive import live_view
+from projectyl.video.props import FRAMES, THUMBS, FRAME_IDX, TS, FOLDER, PATH_LIST, SIZE
 import logging
 from projectyl.utils.io import Dump
+import numpy as np
 
-# Vocabulary:
-# frames
-# thumbs
-FOLDER = "folder"
-PATH_LIST = "path_list"
-FRAME_IDX = "frame_index"
-TS = "timestamp"
-FRAMES, THUMBS = "frames", "thumbs"
-FPS = "fps"
-SIZE = "size"
-INTRISIC_MATRIX = "intrinsic_matrix"
-sample_config_file = {
-    "start_ratio": 0.1,
-    "end_ratio": 0.8,
-    "start_frame": 50,
-    "end_frame": 200,
-    "total_frames": 1464,
-    "fps": 30,
-    FRAMES: {
-        FRAME_IDX: [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
-        TS: [0.1, 0.2, 0.3, 0.4, 0.5],
-        FOLDER: "preprocessed_frames",
-        PATH_LIST: ["preprocessed_frames/frame1.png", "preprocessed_frames/frame2.png"],
-        SIZE: [1920, 1080],
-        INTRISIC_MATRIX: None  # Requires calibration
-    },
-    THUMBS: {
-        FRAME_IDX: [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
-        TS: [0.1, 0.2, 0.3, 0.4, 0.5],
-        FOLDER: "preprocessed_frames",
-        PATH_LIST: ["preprocessed_frames/frame1.png", "preprocessed_frames/frame2.png"],
-        SIZE: [1280, 720],
-        INTRISIC_MATRIX: None  # Need proper rescaling
-    }
-}
 
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
-    preprocessing_config_file = output/"input_configuration.yaml"
-    if preprocessing_config_file.exists() and skip_existing:
-        config = Dump.load_yaml(preprocessing_config_file)
+    config_file = output/"config.yaml"
+    config_trim_file = output/"trim_configuration.yaml"
+    if config_trim_file.exists():  # and skip_existing:
+        config_trim = Dump.load_yaml(config_trim_file)
     else:
         preload_ram = not args.disable_preload_ram
-        config = live_view(input, trimming=True, preload_ram=preload_ram)
-        Dump.save_yaml(config, preprocessing_config_file)
+        config_trim = live_view(input, trimming=True, preload_ram=preload_ram)
+        Dump.save_yaml(config_trim, config_trim_file)
+    thumb_dir = output/"thumbs"
+    if thumb_dir.exists() and skip_existing:
+        logging.warning(f"Results already exist - skip processing  {thumb_dir}")
+        config = Dump.load_yaml(config_file, safe_load=False)
+    else:
+        # Moviepy takes a while to load, load only on demand
+        from projectyl.video.decoder import save_video_frames
+        logging.warning(
+            f"Overwriting results - use --skip-existing to skip processing  {thumb_dir}")
+        thumb_dir.mkdir(parents=True, exist_ok=True)
+        trim = config_trim["start_ratio"], config_trim["end_ratio"]
+        config = save_video_frames(input, thumb_dir, trim=trim, resize=args.resize)
+        config["start_ratio"] = config_trim["start_ratio"]
+        config["end_ratio"] = config_trim["end_ratio"]
+        Dump.save_yaml(config, config_file)
+        try:
+            config = Dump.load_yaml(config_file, safe_load=False)
+        except Exception as e:
+            raise NameError(f"Error loading config file {config_file} {e}")
+    # config[THUMBS][PATH_LIST]
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:

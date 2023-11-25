@@ -8,7 +8,7 @@ YAML_SUPPORT = True
 YAML_NOT_DETECTED_MESSAGE = "yaml is not installed, consider installing it by pip install PyYAML"
 try:
     import yaml
-    from yaml.loader import SafeLoader
+    from yaml.loader import SafeLoader, BaseLoader
 except:
     YAML_SUPPORT = False
     logging.warning(YAML_NOT_DETECTED_MESSAGE)
@@ -30,10 +30,10 @@ class Image:
 
 class Dump:
     @staticmethod
-    def load_yaml(path: Path,) -> dict:
+    def load_yaml(path: Path, safe_load=True) -> dict:
         assert YAML_SUPPORT, YAML_NOT_DETECTED_MESSAGE
         with open(path) as file:
-            params = yaml.load(file, Loader=SafeLoader)
+            params = yaml.load(file, Loader=SafeLoader if safe_load else BaseLoader)
         return params
 
     @staticmethod
