@@ -56,7 +56,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     else:
         preload_ram = not args.disable_preload_ram
         config = live_view(input, trimming=True, preload_ram=preload_ram)
-        Dump.dump_yaml(config, preprocessing_config_file)
+        Dump.save_yaml(config, preprocessing_config_file)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
