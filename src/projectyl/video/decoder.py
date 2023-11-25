@@ -48,9 +48,9 @@ def save_video_frames(input_path: Path, output_folder: Path, trim=None, resize: 
         assert len(trim) == 2
         start, end = trim
         if start is not None:
-            start = int(start*fps)
+            start = int(start*total_length)
         if end is not None:
-            end = int(end*fps)
+            end = int(end*total_length)
     if (video.isOpened() == False):
         logging.warning("Error opening video stream or file")
     frame_idx = -1

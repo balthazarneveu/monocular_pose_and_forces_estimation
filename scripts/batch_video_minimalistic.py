@@ -44,7 +44,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             config = Dump.load_yaml(config_file, safe_load=False)
         except Exception as e:
             raise NameError(f"Error loading config file {config_file} {e}")
-    # config[THUMBS][PATH_LIST]
+    live_view(config[THUMBS][PATH_LIST], trimming=False)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
