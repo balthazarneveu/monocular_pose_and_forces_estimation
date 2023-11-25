@@ -6,13 +6,12 @@ import argparse
 from batch_processing import Batch
 import sys
 from pathlib import Path
-from projectyl.utils.cli_parser_tool import add_video_parser_args, get_trim
+from projectyl.utils.cli_parser_tool import add_video_parser_args
 from projectyl.utils.interactive import live_view
 from projectyl.video.props import FRAMES, THUMBS, FRAME_IDX, TS, FOLDER, PATH_LIST, SIZE
 import logging
 from projectyl.utils.io import Dump
-import numpy as np
-
+from projectyl.algo.pose_estimation import get_pose, get_detector
 
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
@@ -44,7 +43,28 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             config = Dump.load_yaml(config_file, safe_load=False)
         except Exception as e:
             raise NameError(f"Error loading config file {config_file} {e}")
-    live_view(config[THUMBS][PATH_LIST], trimming=False, preload_ram=preload_ram)
+    if "view" in args.algo:
+        live_view(config[THUMBS][PATH_LIST], trimming=False, preload_ram=preload_ram)
+    if "pose" in args.algo:
+        pose_dir = output/"pose"
+        pose_dir.mkdir(parents=True, exist_ok=True)
+        detector = get_detector()
+        pose_annotations = []
+        for path in config[THUMBS][PATH_LIST]:
+            pose_annotation = pose_dir/(Path(path).name)
+            pose_path = pose_annotation.with_suffix(".pkl")
+            if pose_annotation.exists() and skip_existing:
+                assert pose_path.exists()
+                annotations = Dump.load_pickle(pose_path)
+            else:
+                annotations, _ = get_pose(
+                    path,
+                    detector,
+                    visualization_path=pose_annotation
+                )
+                Dump.save_pickle(annotations.pose_landmarks, pose_path)
+            pose_annotations.append(pose_annotation)
+        live_view(pose_annotations, trimming=False, preload_ram=preload_ram)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
@@ -58,6 +78,8 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser.add_argument("-fast", "--disable-preload-ram", action="store_true",
                         help="Preload video in RAM")
     parser.add_argument_group("algorithm")
+    parser.add_argument("-A", "--algo", nargs="+",
+                        choices=["pose", "view"], default=[])
     return batch.parse_args(parser)
 
 

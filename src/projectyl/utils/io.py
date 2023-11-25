@@ -1,6 +1,5 @@
 from pathlib import Path
 import cv2 as cv
-import yaml
 import json
 import logging
 import pickle
@@ -9,9 +8,9 @@ YAML_NOT_DETECTED_MESSAGE = "yaml is not installed, consider installing it by pi
 try:
     import yaml
     from yaml.loader import SafeLoader, BaseLoader
-except:
+except ImportError as e:
     YAML_SUPPORT = False
-    logging.warning(YAML_NOT_DETECTED_MESSAGE)
+    logging.warning(f"{e}\n{YAML_NOT_DETECTED_MESSAGE}")
 
 
 class Image:
@@ -58,7 +57,9 @@ class Dump:
     @staticmethod
     def load_pickle(path: Path,) -> dict:
         with open(path, "rb") as file:
-            params = pickle.load(file)
+            unpickler = pickle.Unpickler(file)
+            params = unpickler.load()
+            # params = pickle.load(file)
         return params
 
     @staticmethod
