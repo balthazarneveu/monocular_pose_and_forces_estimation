@@ -1,5 +1,6 @@
 from interactive_pipe import interactive, interactive_pipeline
-from interactive_pipe.data_objects.image import Image
+# from interactive_pipe.data_objects.image import Image
+from projectyl.utils.io import Image
 import numpy as np
 import logging
 from pathlib import Path
@@ -15,8 +16,11 @@ def get_frame(sequence: List[np.ndarray], frame: float, decoder=["cv2", "moviepy
     if isinstance(sequence, list) or isinstance(sequence, tuple) or isinstance(sequence, np.ndarray):
         frame_idx = int((len(sequence)-1)*frame)
         video_decoder_global["frame_idx"] = frame_idx
-        print(f"RETURN FRAME [{frame_idx}]")
-        return sequence[frame_idx]
+        logging.info(f"RETURN FRAME [{frame_idx}]")
+        if isinstance(sequence[0], str) or isinstance(sequence[0], Path):
+            return Image.load(Path(sequence[frame_idx]))/255.
+        else:
+            return sequence[frame_idx]
     elif isinstance(sequence, str) or isinstance(sequence, Path):
         # ----- LIVE DECODING -----
         # SLOW IN PRACTICE - USE PRELOADING INSTEAD
@@ -139,7 +143,7 @@ def crop(image, center_x=0.5, center_y=0.5, size=8.):
     h_resize = int(w_resize/w*h)
     h_resize = int(min(MAX_ALLOWED_SIZE, h_resize))
     w_resize = int(h_resize/h*w)
-    return cv.resize(crop, (w_resize, h_resize))
+    return cv.resize(crop, (w_resize, h_resize), interpolation=cv.INTER_NEAREST)
 
 
 def visualize(sequence):
@@ -149,12 +153,12 @@ def visualize(sequence):
 
 
 def interactive_visualize(sequence: Union[Path, List[np.ndarray]]):
-    int_viz = interactive_pipeline(gui="auto", cache=False)(visualize)
+    int_viz = interactive_pipeline(gui="auto", cache=True)(visualize)
     int_viz(sequence)
 
 
 def trimming_pipeline(sequence: Union[Path, List[np.ndarray]], unique_seq_name: str) -> Tuple[np.ndarray, np.ndarray]:
-    """PIPELINE
+    """PIPELINE TRIM
 
     Args:
         sequence (Union[Path, List[np.ndarray]]): input sequence (path or list of loaded arrays)
@@ -176,7 +180,7 @@ def interactive_trimming(sequence: Union[Path, List[np.ndarray]], unique_seq_nam
 
     Args:
         sequence (Union[Path, List[np.ndarray]]): path or list of pre-loaded arrays
-        unique_seq_name (str): _description_
+        unique_seq_name (str): unique identifier for multiprocessing (use video name)
 
     Returns:
         dict: dict containing trimming info start_ratio, end_ratio
@@ -184,7 +188,7 @@ def interactive_trimming(sequence: Union[Path, List[np.ndarray]], unique_seq_nam
     if unique_seq_name is None and isinstance(sequence, Path):
         unique_seq_name = sequence.name
     assert unique_seq_name is not None, f"{unique_seq_name} is None"
-    interactive_trim_seq = interactive_pipeline(gui="auto", cache=False)(trimming_pipeline)
+    interactive_trim_seq = interactive_pipeline(gui="auto", cache=True)(trimming_pipeline)
     interactive_trim_seq(sequence, unique_seq_name)
     global selected_frames
     trim_info = selected_frames[unique_seq_name]
@@ -229,9 +233,13 @@ def live_view(video_path: Path,
         else:
             full_decoded_video_in_ram = str(video_path)
     elif isinstance(video_path, list) or isinstance(video_path, tuple):
-        full_decoded_video_in_ram = np.array(
-            [Image.load_image(img).data for img in tqdm(
-                video_path, desc=f"Loading images {Path(video_path[0]).parent.parent.name}")])
+        if preload_ram:
+            print("PRELOADING RAM")
+            full_decoded_video_in_ram = np.array(
+                [Image.load(Path(img))/255. for img in tqdm(
+                    video_path, desc=f"Loading images {Path(video_path[0]).parent.parent.name}")])
+        else:
+            full_decoded_video_in_ram = video_path
 
     selected_frames = {}
     if trimming:

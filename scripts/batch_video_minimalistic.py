@@ -19,10 +19,10 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
     config_file = output/"config.yaml"
     config_trim_file = output/"trim_configuration.yaml"
+    preload_ram = not args.disable_preload_ram
     if config_trim_file.exists():  # and skip_existing:
         config_trim = Dump.load_yaml(config_trim_file)
     else:
-        preload_ram = not args.disable_preload_ram
         config_trim = live_view(input, trimming=True, preload_ram=preload_ram)
         Dump.save_yaml(config_trim, config_trim_file)
     thumb_dir = output/"thumbs"
@@ -44,7 +44,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             config = Dump.load_yaml(config_file, safe_load=False)
         except Exception as e:
             raise NameError(f"Error loading config file {config_file} {e}")
-    live_view(config[THUMBS][PATH_LIST], trimming=False)
+    live_view(config[THUMBS][PATH_LIST], trimming=False, preload_ram=preload_ram)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
