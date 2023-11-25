@@ -4,27 +4,41 @@ import numpy as np
 from time import sleep
 from projectyl.dynamics.armmodel import ArmRobot
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
+from typing import Union, Optional, Tuple
+
+
+def get_frame_id(arm: ArmRobot, frame: Union[str, int]) -> int:
+    if isinstance(frame, str):
+        frame_id = arm.model.getFrameId(frame)
+    elif isinstance(frame, int):
+        frame_id = frame
+    return frame_id
+
+
+def forward_kinematics(
+    arm: ArmRobot, q: np.ndarray,
+    frame: Optional[Union[str, int]] = "end_effector"
+) -> Tuple[pin.SE3, np.ndarray]:
+    frame_id = get_frame_id(arm, frame)
+    pin.framesForwardKinematics(arm.model, arm.data, q)
+    o_Mtool = arm.data.oMf[frame_id].copy()
+    o_Jtool = pin.computeFrameJacobian(arm.model, arm.data, q, frame_id, pin.LOCAL_WORLD_ALIGNED)
+    return o_Mtool, o_Jtool
 
 
 def inverse_kinematics(
-    arm: ArmRobot, viz: MeshcatVisualizer, target_position: pin.SE3, q_init: np.ndarray = None,
-    joint_name: str = "end_effector"
+    arm: ArmRobot,
+    viz: MeshcatVisualizer,
+    target_position: pin.SE3,
+    q_init: np.ndarray = None,
+    joint_name: Optional[Union[str, int]] = "end_effector"
 ):
-    elbow_id = arm.model.getFrameId("elbow")
-    wrist_id = arm.model.getFrameId("end_effector")
     if q_init is None:
         q_init = pin.randomConfiguration(arm.model)
     q = q_init.copy()
     DT = 1e-2
-    viz.display(q)
     for i in tqdm(range(500)):
-        pin.framesForwardKinematics(arm.model, arm.data, q)
-        if joint_name == "end_effector":
-            o_Mtool = arm.data.oMf[wrist_id].copy()
-            o_Jtool = pin.computeFrameJacobian(arm.model, arm.data, q, wrist_id, pin.LOCAL_WORLD_ALIGNED)
-        elif joint_name == "elbow":
-            o_Mtool = arm.data.oMf[elbow_id].copy()
-            o_Jtool = pin.computeFrameJacobian(arm.model, arm.data, q, elbow_id, pin.LOCAL_WORLD_ALIGNED)
+        o_Mtool, o_Jtool = forward_kinematics(arm, q, joint_name)
         o_Jtool3 = o_Jtool[:3, :]
         o_TG = target_position.translation - o_Mtool.translation
         vq = np.linalg.pinv(o_Jtool3) @ o_TG[:3]
