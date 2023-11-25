@@ -32,6 +32,17 @@ def update_arm_model_filter(body_pose_full, update_arm=True, fit_elbow=False, sc
                          fit_elbow=fit_elbow, scale_constant=scale_constant)
 
 
+@interactive(
+    fpix=(1000., [10, 10000.], "fpix"),
+)
+def forward_camera_projection(img, fpix=1000., global_params={}):
+    build_arm_model(global_params=global_params)
+    arm = global_params["arm"]
+    fpix = 1000.
+    intrinic_matrix = np.diag([fpix, fpix, 1.])
+    intrinic_matrix[0, 2] = img.shape[1]/2.
+    intrinic_matrix[1, 2] = img.shape[0]/2.
+    arm.forward_camera_projection(intrinic_matrix)
 
 
 def visualize_pose(sequence, pose_annotations):
@@ -39,6 +50,7 @@ def visualize_pose(sequence, pose_annotations):
     frame_overlay = overlay_pose(frame, pose_annotations)
     cropped = crop(frame_overlay)
     update_arm_model_filter(pose_annotations)
+    # forward_camera_projection(frame)
     return cropped
 
 
