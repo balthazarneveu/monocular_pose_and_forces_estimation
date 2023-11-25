@@ -12,7 +12,7 @@ from projectyl.video.props import FRAMES, THUMBS, FRAME_IDX, TS, FOLDER, PATH_LI
 import logging
 from projectyl.utils.io import Dump
 from projectyl.algo.pose_estimation import get_pose, get_detector
-
+from projectyl.utils.pose_overlay import interactive_visualize_pose
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
@@ -43,28 +43,35 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             config = Dump.load_yaml(config_file, safe_load=False)
         except Exception as e:
             raise NameError(f"Error loading config file {config_file} {e}")
+    im_list = config[THUMBS][PATH_LIST]
     if "view" in args.algo:
-        live_view(config[THUMBS][PATH_LIST], trimming=False, preload_ram=preload_ram)
+        live_view(im_list, trimming=False, preload_ram=preload_ram)
     if "pose" in args.algo:
         pose_dir = output/"pose"
         pose_dir.mkdir(parents=True, exist_ok=True)
-        detector = get_detector()
+        detector = None
         pose_annotations = []
+        pose_annotation_img_list = []
         for path in config[THUMBS][PATH_LIST]:
-            pose_annotation = pose_dir/(Path(path).name)
-            pose_path = pose_annotation.with_suffix(".pkl")
-            if pose_annotation.exists() and skip_existing:
+            pose_annotation_img = pose_dir/(Path(path).name)
+            pose_path = pose_annotation_img.with_suffix(".pkl")
+            if pose_path.exists() and skip_existing:
                 assert pose_path.exists()
                 annotations = Dump.load_pickle(pose_path)
             else:
+                if not detector:
+                    detector = get_detector()
                 annotations, _ = get_pose(
                     path,
                     detector,
-                    visualization_path=pose_annotation
+                    visualization_path=pose_annotation_img
                 )
                 Dump.save_pickle(annotations.pose_landmarks, pose_path)
-            pose_annotations.append(pose_annotation)
-        live_view(pose_annotations, trimming=False, preload_ram=preload_ram)
+            pose_annotations.append(annotations)
+            pose_annotation_img_list.append(pose_annotation_img)
+        interactive_visualize_pose(im_list, pose_annotations)
+        # interactive_visualize_pose(pose_annotation_img_list, pose_annotations)
+        # live_view(pose_annotations, trimming=False, preload_ram=preload_ram)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
