@@ -47,15 +47,16 @@ sample_config_file = {
     }
 }
 
+
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
     preprocessing_config_file = output/"input_configuration.yaml"
-    if preprocessing_config_file.exists():
-        load_config = Dump.load_yaml(preprocessing_config_file)
+    if preprocessing_config_file.exists() and skip_existing:
+        config = Dump.load_yaml(preprocessing_config_file)
     else:
-        load_config = {}
-    preload_ram = not args.disable_preload_ram
-    live_view(input, trimming=True, preload_ram=preload_ram)
+        preload_ram = not args.disable_preload_ram
+        config = live_view(input, trimming=True, preload_ram=preload_ram)
+
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
