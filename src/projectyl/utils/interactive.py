@@ -223,8 +223,7 @@ def live_view(video_path: Path,
 
     selected_frames = {}
     if trimming:
-        trimmed_dict = interactive_trimming(full_decoded_video_in_ram, video_path.name)
-        print(trimmed_dict)
+        selected_frames = interactive_trimming(full_decoded_video_in_ram, video_path.name)
     else:
         int_viz = interactive_pipeline(gui="auto", cache=True)(visualize)
         int_viz(full_decoded_video_in_ram, global_params={})
