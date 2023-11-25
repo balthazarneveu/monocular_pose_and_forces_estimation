@@ -12,15 +12,20 @@ from projectyl.algo.segmentation import segment_frames
 from projectyl.utils.io import Dump
 from projectyl.utils.interactive import interactive_trimming, interactive_visualize
 
+
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     add_video_parser_args(parser)
-    parser.add_argument("-mp", "--multi-processing", action="store_true", help="Enable multiprocessing - Warning with GPU - use -j2")    
-    parser.add_argument("--override", action="store_true", help="overwrite processed results")
+    parser.add_argument("-mp", "--multi-processing", action="store_true",
+                        help="Enable multiprocessing - Warning with GPU - use -j2")
+    parser.add_argument("--override", action="store_true",
+                        help="overwrite processed results")
     parser.add_argument_group("algorithm")
-    parser.add_argument("-A", "--algo", nargs="+", choices=["bgsub", "sam", "trim", "viewer"])
+    parser.add_argument("-A", "--algo", nargs="+",
+                        choices=["bgsub", "sam", "trim", "viewer"])
     return batch.parse_args(parser)
+
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     trim = get_trim(args)
@@ -30,21 +35,24 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     else:
         # Moviepy takes a while to load, load only on demand
         from projectyl.video.decoder import save_video_frames
-        logging.warning(f"Overwriting results - use --skip-existing to skip processing  {output}")
+        logging.warning(
+            f"Overwriting results - use --skip-existing to skip processing  {output}")
         output.mkdir(parents=True, exist_ok=True)
         save_video_frames(input, output, trim=trim, resize=args.resize)
     algo_list = args.algo
     all_frames = sorted(list(output.glob("*.*g")))
-    
+
     if "trim" in algo_list:
-        trim_path=output/"trim.yaml"
+        trim_path = output/"trim.yaml"
         if trim_path.exists() and skip_existing:
             logging.info("Trim file already exists")
         else:
-            sequence = np.array([Image.load_image(img).data for img in all_frames])
+            sequence = np.array(
+                [Image.load_image(img).data for img in all_frames])
             interactive_trimming(sequence, trim_path=output/trim_path)
         trim_conf = Dump.load_yaml(trim_path)
-        sequence = np.array([Image.load_image(img).data for img in all_frames[trim_conf["start"]: trim_conf["end"]]])
+        sequence = np.array([Image.load_image(
+            img).data for img in all_frames[trim_conf["start"]: trim_conf["end"]]])
     else:
         sequence = np.array([Image.load_image(img).data for img in all_frames])
 
@@ -61,15 +69,16 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             Dump.save_pickle(masks, mask_path)
         interactive_sam(sequence, masks)
 
+
 def main(argv):
     batch = Batch(argv)
-    batch.set_io_description(input_help='input video files', output_help='output directory')
+    batch.set_io_description(
+        input_help='input video files', output_help='output directory')
     args = parse_command_line(batch)
     # Disable mp - Highly recommended!
     if not args.multi_processing:
         batch.set_multiprocessing_enabled(False)
     batch.run(video_decoding)
-
 
 
 if __name__ == "__main__":
