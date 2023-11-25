@@ -7,6 +7,7 @@ from batch_processing import Batch
 import sys
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args, get_trim
+from projectyl.utils.interactive import interactive_trimming_live
 import logging
 from projectyl.utils.io import Dump
 
@@ -26,6 +27,7 @@ sample_config_file = {
     "end_ratio": 0.8,
     "start_frame": 50,
     "end_frame": 200,
+    "total_frames": 1464,
     "fps": 30,
     FRAMES: {
         FRAME_IDX: [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
@@ -54,7 +56,13 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         load_config = Dump.load_yaml(preprocessing_config_file)
     else:
         load_config = {}
-
+    interactive_trimming_live(input)
+    # print(preprocessing_config_file)
+    # preprocessed_frame_dir = output/"preprocessed_frames"
+    # processed_frames = all_frames = sorted(list(output.glob("*.*g"))) #png or jpg
+    # if output.exists() and skip_existing:
+    #     logging.warning(f"Results already exist - skip processing  {output}")
+    # else
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
@@ -76,6 +84,7 @@ def main(argv):
     # Disable mp - Highly recommended!
     if not args.multi_processing:
         batch.set_multiprocessing_enabled(False)
+    batch.set_multiprocessing_enabled(False)
     batch.run(video_decoding)
 
 

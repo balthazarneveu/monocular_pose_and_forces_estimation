@@ -2,15 +2,25 @@ from interactive_pipe import interactive, interactive_pipeline
 import numpy as np
 import logging
 from pathlib import Path
-from projectyl.utils.io import Dump
 import cv2 as cv
+from moviepy.editor import VideoFileClip
+from tqdm import tqdm
+selected_frames = {}
 
 
 @interactive(frame=(0., [0., 100.]))
 def frame_selector(sequence: np.ndarray, frame: float = 0., global_params={}) -> np.ndarray:
-    frame_idx = int((len(sequence)-1)*frame/100.)
-    global_params["frame_idx"] = frame_idx
-    return sequence[frame_idx]
+    if isinstance(sequence, list) or isinstance(sequence, tuple) or isinstance(sequence, np.ndarray):
+        frame_idx = int((len(sequence)-1)*frame/100.)
+        global_params["frame_idx"] = frame_idx
+        return sequence[frame_idx]
+    elif isinstance(sequence, VideoFileClip):
+        # Does not work with moviepy
+        frame_idx = int(sequence.fps*frame)
+        global_params["frame_idx"] = frame_idx
+        return sequence.get_frame(frame_idx)
+    else:
+        raise NameError(f"Cannot handle type {type(sequence)}")
 
 
 @interactive()
@@ -21,25 +31,26 @@ def frame_extractor(sequence: np.ndarray, global_params={}) -> np.ndarray:
 
 
 @interactive(start=(0., [0., 1.]), end=(1., [0., 1.]))
-def trim_seq(sequence, trim_path, start=0, end=1, global_params={}):
+def trim_seq(sequence, start=0, end=1, global_params={}):
+    global selected_frames
+    start_ratio = min(start, end)
+    end_ratio = max(start, end)
+    selected_frames = {
+        "start_ratio": start_ratio,
+        "end_ratio": end_ratio
+    }
     start_idx_ = int(np.round((len(sequence)-1)*start))
     end_idx_ = int(np.round((len(sequence)-1)*end))
     start_idx = min(start_idx_, end_idx_)
     end_idx = max(start_idx_, end_idx_)
     global_params["start"] = start_idx
     global_params["end"] = end_idx
-    Dump.save_yaml({"start": start_idx, "end": end_idx}, trim_path)
-    return sequence[start_idx, ...], sequence[end_idx, ...]
+    return sequence[int(start_idx)], sequence[int(end_idx)]  # works with list and np.array
 
 
-def trimming(sequence, trim_path):
-    start_frame, end_frame = trim_seq(sequence, trim_path)
-    return start_frame, end_frame
-
-
-def interactive_trimming(seq, trim_path: Path):
+def interactive_trimming(seq):
     interactive_trim_seq = interactive_pipeline(gui="qt", cache=False)(trimming)
-    interactive_trim_seq(seq, trim_path)
+    interactive_trim_seq(seq)
 
 
 # Helper to process much smaller raw imagge
@@ -50,7 +61,6 @@ def interactive_trimming(seq, trim_path: Path):
 )
 def crop(image, center_x=0.5, center_y=0.5, size=8.):
     # size is defined in power of 2
-    original_shape = image.shape
     if len(image.shape) == 2:
         offset = 0
     elif len(image.shape) == 3:
@@ -90,5 +100,33 @@ def visualize(sequence):
 
 
 def interactive_visualize(sequence):
-    int_viz = interactive_pipeline(gui="qt", cache=False)(visualize)
+    int_viz = interactive_pipeline(gui="auto", cache=False)(visualize)
     int_viz(sequence)
+
+
+def trimming(sequence):
+    start_frame, end_frame = trim_seq(sequence)
+    cropped_start = crop(start_frame)
+    cropped_end = crop(end_frame)
+    return cropped_start, cropped_end
+
+
+def interactive_trimming_live(video_path: Path, skip_frames=20, resize=0.3):
+    """Decode without saving to disk first"""
+    assert video_path.exists(), f"Video path {video_path} does not exist"
+    video = VideoFileClip(str(video_path))
+    if video.rotation in (90, 270):  # Support vertical videos
+        video = video.resize(video.size[::-1])
+        video.rotation = 0
+    int_viz = interactive_pipeline(gui="auto", cache=False)(trimming)
+    end_frame = int(video.duration*video.fps)-1
+    full_decoded_video_in_ram = [
+        cv.resize(video.get_frame(idx*1.0/video.fps), None, fx=resize, fy=resize)/255.
+        for idx in tqdm(range(0, end_frame, skip_frames), desc="Decoding video")
+    ]
+    video.close()
+    int_viz(full_decoded_video_in_ram)
+    global selected_frames
+    selected_frames["total_frames"] = end_frame
+    print(f"TRIMMING {video_path.name}:\n{selected_frames}")
+    return selected_frames
