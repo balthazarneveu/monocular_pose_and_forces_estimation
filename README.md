@@ -22,15 +22,21 @@ cd monocular_pose_and_forces_estimation
 pip install -e .
 ```
 
+Download models
+```bash
+wget -O pose_landmarker.task -q https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task
+```
+
 #### Tools
 ```bash
-python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed -t 3.2 3.4   --resize 0.2
+python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed --resize 0.2
 ```
 - `-i` regex or list of videos
 - `-o` output folder (*automatically created if not present*)
 - `--resize`: resize ratio
-- `-A` to pick up an algo (including a simple `-A viewer` will lanch a frame by frame viewer with zoom in capabilities)
-> `--trim t1 t2`: trim the videos from t1 to t2 in seconds  *not recommended*
+- `-A` to pick up an algo
+  - `-A view`  will simply lanch a frame by frame viewer with zoom-in capabilities
+  - `-A pose` will run mediapipe pose estimator. (run once, store the results, next time reload)
 > `--override` can be used to recompute images and ignored previous results.
 
 -----
