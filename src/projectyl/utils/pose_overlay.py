@@ -22,14 +22,15 @@ def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, j
 
 @interactive(
     update_arm=(True, "update_arm"),
-    fit_elbow=(False, "fit_elbow"),
+    fit_mode=("wrist", ["elbow", "wrist", "elbow+wrist"], "fit_mode"),
     scale_constant=(5., [0.1, 10.], "scale_constant"),
 )
-def update_arm_model_filter(body_pose_full, update_arm=True, fit_elbow=False, scale_constant=5., global_params={}):
+def update_arm_model_filter(body_pose_full, update_arm=True, fit_mode="wrist", scale_constant=5., global_params={}):
     if update_arm:
         build_arm_model(global_params=global_params)
         update_arm_model(body_pose_full, global_params=global_params,
-                         fit_elbow=fit_elbow, scale_constant=scale_constant)
+                         fit_elbow="elbow" in fit_mode, fit_wrist="wrist" in fit_mode,
+                         scale_constant=scale_constant)
 
 
 @interactive(
