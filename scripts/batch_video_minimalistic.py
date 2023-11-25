@@ -7,7 +7,7 @@ from batch_processing import Batch
 import sys
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args, get_trim
-from projectyl.utils.interactive import interactive_trimming_live
+from projectyl.utils.interactive import live_view
 import logging
 from projectyl.utils.io import Dump
 
@@ -47,22 +47,15 @@ sample_config_file = {
     }
 }
 
-
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
-    global_trim = get_trim(args)
     skip_existing = not args.override
     preprocessing_config_file = output/"input_configuration.yaml"
     if preprocessing_config_file.exists():
         load_config = Dump.load_yaml(preprocessing_config_file)
     else:
         load_config = {}
-    interactive_trimming_live(input)
-    # print(preprocessing_config_file)
-    # preprocessed_frame_dir = output/"preprocessed_frames"
-    # processed_frames = all_frames = sorted(list(output.glob("*.*g"))) #png or jpg
-    # if output.exists() and skip_existing:
-    #     logging.warning(f"Results already exist - skip processing  {output}")
-    # else
+    preload_ram = not args.disable_preload_ram
+    live_view(input, trimming=True, preload_ram=preload_ram)
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Batch video processing',
@@ -72,6 +65,8 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
                         help="Enable multiprocessing - Warning with GPU - use -j2")
     parser.add_argument("--override", action="store_true",
                         help="overwrite processed results")
+    parser.add_argument("-fast", "--disable-preload-ram", action="store_true",
+                        help="Preload video in RAM")
     parser.add_argument_group("algorithm")
     return batch.parse_args(parser)
 
@@ -84,7 +79,6 @@ def main(argv):
     # Disable mp - Highly recommended!
     if not args.multi_processing:
         batch.set_multiprocessing_enabled(False)
-    batch.set_multiprocessing_enabled(False)
     batch.run(video_decoding)
 
 
