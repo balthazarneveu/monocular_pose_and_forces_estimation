@@ -1,15 +1,17 @@
+from time import sleep
 from projectyl.utils.interactive import frame_selector, crop
 from interactive_pipe import interactive, interactive_pipeline
 from projectyl.algo.pose_estimation import draw_landmarks_on_image
 from typing import Union, List
 import numpy as np
 from pathlib import Path
+from projectyl.dynamics.inverse_kinematics import update_arm_model, build_arm_model
 
 
 @interactive(
-        pose_overlay=(True, "pose_overlay"),
-        joint_id=(-1, [-2, 32, 1])
-    )
+    pose_overlay=(True, "pose_overlay"),
+    joint_id=(-1, [-2, 32, 1])
+)
 def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, joint_id=-1):
     if not pose_overlay:
         return frame
@@ -18,10 +20,21 @@ def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, j
     return new_annot
 
 
+@interactive(
+    update_arm=(True, "update_arm"),
+    fit_elbow=(False, "fit_elbow"),
+)
+def update_arm_model_filter(body_pose_full, update_arm=True, fit_elbow=False, global_params={}):
+    if update_arm:
+        build_arm_model(global_params=global_params)
+        update_arm_model(body_pose_full, global_params=global_params, fit_elbow=fit_elbow)
+
+
 def visualize_pose(sequence, pose_annotations):
     frame = frame_selector(sequence)
     frame_overlay = overlay_pose(frame, pose_annotations)
     cropped = crop(frame_overlay)
+    update_arm_model_filter(pose_annotations)
     return cropped
 
 
