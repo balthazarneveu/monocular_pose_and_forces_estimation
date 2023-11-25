@@ -70,8 +70,6 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             pose_annotations.append(annotations)
             pose_annotation_img_list.append(pose_annotation_img)
         interactive_visualize_pose(im_list, pose_annotations)
-        # interactive_visualize_pose(pose_annotation_img_list, pose_annotations)
-        # live_view(pose_annotations, trimming=False, preload_ram=preload_ram)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:

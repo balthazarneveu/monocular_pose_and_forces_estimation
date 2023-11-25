@@ -53,7 +53,6 @@ def draw_landmarks_on_image(rgb_image, pose_landmarks_list, joint_id=-1):
             for current_joint_id in [12, 14, 16]:
                 draw_joint(annotated_image, pose_landmarks, current_joint_id, color=(255, 0, 0))
         else:
-
             draw_joint(annotated_image, pose_landmarks, joint_id)
 
     return annotated_image

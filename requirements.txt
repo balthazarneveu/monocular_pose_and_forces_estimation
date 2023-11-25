@@ -10,3 +10,4 @@ torchvision
 pyyaml
 pin
 meshcat
+mediapipe

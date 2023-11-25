@@ -37,7 +37,7 @@ python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed --resiz
 - `-A` to pick up an algo
   - `-A view`  will simply lanch a frame by frame viewer with zoom-in capabilities
   - `-A pose` will run mediapipe pose estimator. (run once, store the results, next time reload)
-> `--override` can be used to recompute images and ignored previous results.
+> `--override` can be used to recompute images and overwrite previous results.
 
 -----
 
