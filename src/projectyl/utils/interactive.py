@@ -1,5 +1,4 @@
 from interactive_pipe import interactive, interactive_pipeline
-# from interactive_pipe.data_objects.image import Image
 from projectyl.utils.io import Image
 import numpy as np
 import logging
