@@ -5,13 +5,12 @@ from pathlib import Path
 import cv2 as cv
 from moviepy.editor import VideoFileClip
 from tqdm import tqdm
-from typing import List
+from typing import List, Union, Tuple, Optional
 selected_frames = {}
-video_decoder_global = {}
 
 
-def get_frame(sequence: List[np.ndarray], frame: float, decoder=["cv2", "moviepy"][0]) -> np.ndarray:
-    global video_decoder_global
+def get_frame(sequence: List[np.ndarray], frame: float, decoder=["cv2", "moviepy"][0], video_decoder_global={}) -> np.ndarray:
+    # global video_decoder_global
     if isinstance(sequence, list) or isinstance(sequence, tuple) or isinstance(sequence, np.ndarray):
         frame_idx = int((len(sequence)-1)*frame)
         video_decoder_global["frame_idx"] = frame_idx
@@ -20,7 +19,8 @@ def get_frame(sequence: List[np.ndarray], frame: float, decoder=["cv2", "moviepy
     elif isinstance(sequence, str) or isinstance(sequence, Path):
         # ----- LIVE DECODING -----
         # SLOW IN PRACTICE - USE PRELOADING INSTEAD
-        seq = video_decoder_global.get("seq", None)
+        seq_key = str(sequence)
+        seq = video_decoder_global.get(seq_key, None)
         if decoder == "moviepy":
             # ---------------------------------------------- moviepy
             if seq is None:
@@ -29,8 +29,8 @@ def get_frame(sequence: List[np.ndarray], frame: float, decoder=["cv2", "moviepy
                 if seq.rotation in (90, 270):  # Support vertical videos
                     seq = seq.resize(seq.size[::-1])
                     seq.rotation = 0
-                video_decoder_global["seq"] = seq
-            seq = video_decoder_global["seq"]
+                video_decoder_global[seq_key] = seq
+            seq = video_decoder_global[seq_key]
             frame_time = seq.duration * frame
             frame_idx = int(seq.fps*frame)
             video_decoder_global["frame_idx"] = frame_idx
@@ -40,8 +40,8 @@ def get_frame(sequence: List[np.ndarray], frame: float, decoder=["cv2", "moviepy
             if seq is None:
                 print("LOAD VIDEO SEQUENCE, Live decoding")
                 seq = cv.VideoCapture(str(sequence))
-                video_decoder_global["seq"] = seq
-            seq = video_decoder_global["seq"]
+                video_decoder_global[seq_key] = seq
+            seq = video_decoder_global[seq_key]
             if isinstance(frame, float):
                 fps = seq.get(cv.CAP_PROP_FPS)
                 frame_idx = int(fps*frame)
@@ -60,7 +60,7 @@ def get_frame(sequence: List[np.ndarray], frame: float, decoder=["cv2", "moviepy
 
 @interactive(frame=(0., [0., 1.]))
 def frame_selector(sequence: np.ndarray, frame: float = 0., global_params={}) -> np.ndarray:
-    frame = get_frame(sequence, frame)
+    frame = get_frame(sequence, frame, video_decoder_global=global_params)
     return frame
 
 
@@ -72,11 +72,11 @@ def frame_extractor(sequence: np.ndarray, global_params={}) -> np.ndarray:
 
 
 @interactive(start=(0., [0., 1.]), end=(1., [0., 1.]))
-def trim_seq(sequence, start=0, end=1, global_params={}):
+def trim_seq(sequence, unique_seq_name, start=0, end=1, global_params={}):
     global selected_frames
     start_ratio = min(start, end)
     end_ratio = max(start, end)
-    selected_frames = {
+    selected_frames[unique_seq_name] = {
         "start_ratio": start_ratio,
         "end_ratio": end_ratio
     }
@@ -97,12 +97,6 @@ def trim_seq(sequence, start=0, end=1, global_params={}):
     return grabbed_frame_start, grabbed_frame_end
 
 
-def interactive_trimming(seq):
-    interactive_trim_seq = interactive_pipeline(gui="auto", cache=False)(trim_seq)
-    interactive_trim_seq(seq)
-
-
-# Helper to process much smaller raw imagge
 @interactive(
     center_x=(0.5, [0., 1.], "cx", ["left", "right"]),
     center_y=(0.5, [0., 1.], "cy", ["up", "down"]),
@@ -148,22 +142,68 @@ def visualize(sequence):
     return cropped
 
 
-def interactive_visualize(sequence):
+def interactive_visualize(sequence: Union[Path, List[np.ndarray]]):
     int_viz = interactive_pipeline(gui="auto", cache=False)(visualize)
     int_viz(sequence)
 
 
-def trimming_pipeline(sequence):
-    start_frame, end_frame = trim_seq(sequence)
-    # return start_frame, end_frame
+def trimming_pipeline(sequence: Union[Path, List[np.ndarray]], unique_seq_name: str) -> Tuple[np.ndarray, np.ndarray]:
+    """PIPELINE
+
+    Args:
+        sequence (Union[Path, List[np.ndarray]]): input sequence (path or list of loaded arrays)
+        unique_seq_name (str): Required for multiprocessing
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: start frame, end frame of the trimmed sequence
+    """
+    start_frame, end_frame = trim_seq(sequence, unique_seq_name)
     cropped_start = crop(start_frame)
     cropped_end = crop(end_frame)
     return cropped_start, cropped_end
 
 
-def live_view(video_path: Path, skip_frames=20, resize=0.3, preload_ram=False, trimming=True):
+def interactive_trimming(sequence: Union[Path, List[np.ndarray]], unique_seq_name: Optional[str] = None) -> dict:
+    """Trim a sequence interactively
+    Returns a dict with start_ratio, end_ratio
+    Compatible with multiprocessing
+
+    Args:
+        sequence (Union[Path, List[np.ndarray]]): path or list of pre-loaded arrays
+        unique_seq_name (str): _description_
+
+    Returns:
+        dict: dict containing trimming info start_ratio, end_ratio
+    """
+    if unique_seq_name is None and isinstance(sequence, Path):
+        unique_seq_name = sequence.name
+    assert unique_seq_name is not None, f"{unique_seq_name} is None"
+    interactive_trim_seq = interactive_pipeline(gui="auto", cache=False)(trimming_pipeline)
+    interactive_trim_seq(sequence, unique_seq_name)
+    global selected_frames
+    trim_info = selected_frames[unique_seq_name]
+    selected_frames.pop(unique_seq_name)  # Remove info
+    return trim_info
+
+
+def live_view(video_path: Path,
+              skip_frames: int = 20, resize: float = 0.3, preload_ram: Optional[bool] = False,  # RAM PRELOADING
+              trimming: Optional[bool] = True) -> dict:
     """Decode without saving to disk first
     Trim or live view
+
+    Args:
+        video_path (Path): video path to the video
+        skip_frames (int, optional): skip frames for pre RAM decoding. Defaults to 20.
+        resize (float, optional): Resize frames during pre- RAM decoding. Defaults to 0.3.
+        preload_ram (Optional[bool], optional): Preload to RAM, slower at first, faster at live view.
+        Defaults to False.
+        trimming (Optional[bool], optional): Trim (start, end) if True
+        Single frame view if False.
+        Defaults to True.
+
+    Returns:
+        dict: information on trimming
     """
     # Preload video in RAM
     assert video_path.exists(), f"Video path {video_path} does not exist"
@@ -180,16 +220,12 @@ def live_view(video_path: Path, skip_frames=20, resize=0.3, preload_ram=False, t
         video.close()
     else:
         full_decoded_video_in_ram = str(video_path)
-    global video_decoder_global
-    video_decoder_global = {}  # reset dict containing current video decoder
-    # Live trimming
+
+    selected_frames = {}
     if trimming:
-        int_viz = interactive_pipeline(gui="auto", cache=False, safe_input_buffer_deepcopy=False)(trimming_pipeline)
-        int_viz(full_decoded_video_in_ram, global_params={})
-        global selected_frames
-        print(f"TRIMMING {video_path.name}:\n{selected_frames}")
-        print(len(full_decoded_video_in_ram))
-        return selected_frames
+        trimmed_dict = interactive_trimming(full_decoded_video_in_ram, video_path.name)
+        print(trimmed_dict)
     else:
-        int_viz = interactive_pipeline(gui="auto", cache=False, safe_input_buffer_deepcopy=False)(visualize)
+        int_viz = interactive_pipeline(gui="auto", cache=True)(visualize)
         int_viz(full_decoded_video_in_ram, global_params={})
+    return selected_frames
