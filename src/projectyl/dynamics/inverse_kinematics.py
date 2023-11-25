@@ -10,7 +10,7 @@ def inverse_kinematics(
     arm: ArmRobot, viz: MeshcatVisualizer, target_position: pin.SE3, q_init: np.ndarray = None,
     joint_name: str = "end_effector"
 ):
-    elbow_id = arm.model.getJointId("elbow")
+    elbow_id = arm.model.getFrameId("elbow")
     wrist_id = arm.model.getFrameId("end_effector")
     if q_init is None:
         q_init = pin.randomConfiguration(arm.model)
@@ -23,7 +23,7 @@ def inverse_kinematics(
             o_Mtool = arm.data.oMf[wrist_id].copy()
             o_Jtool = pin.computeFrameJacobian(arm.model, arm.data, q, wrist_id, pin.LOCAL_WORLD_ALIGNED)
         elif joint_name == "elbow":
-            o_Mtool = arm.data.oMi[elbow_id].copy()
+            o_Mtool = arm.data.oMf[elbow_id].copy()
             o_Jtool = pin.computeFrameJacobian(arm.model, arm.data, q, elbow_id, pin.LOCAL_WORLD_ALIGNED)
         o_Jtool3 = o_Jtool[:3, :]
         o_TG = target_position.translation - o_Mtool.translation
@@ -47,7 +47,7 @@ def build_arm_model(global_params: dict = {}):
         global_params["viz"] = viz
 
 
-def update_arm_model(body_pose_full, global_params={}, fit_elbow=False):
+def update_arm_model(body_pose_full, global_params={}, fit_elbow=False, scale_constant=1.):
     # shoulder, elbow, wrist
     SHOULDER, ELBOW, WRIST = "shoulder", "elbow", "wrist"
     COLORS = {
@@ -71,7 +71,7 @@ def update_arm_model(body_pose_full, global_params={}, fit_elbow=False):
 
     def get_estimated_arm_se3(joint_pos):
         target_position = np.array([0., joint_pos[0], -joint_pos[1]])
-        target_position = 5.*(target_position - shoulder_pos) + np.array([0., 0., 1.])
+        target_position = scale_constant*(target_position - shoulder_pos) + np.array([0., 0., 1.])
         new_pose = pin.SE3()
         new_pose.rotation = np.eye(3)
         new_pose.translation = target_position
