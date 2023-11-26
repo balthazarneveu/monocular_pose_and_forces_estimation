@@ -1,6 +1,6 @@
 import numpy as np
 
-from pinocchio import RobotWrapper, SE3, Model, Inertia, JointModelSpherical, JointModelRUBY, GeometryModel, GeometryObject, Frame, FrameType
+from pinocchio import RobotWrapper, SE3, Model, Inertia, JointModelFreeFlyer, JointModelSpherical, JointModelRY, GeometryModel, GeometryObject, Frame, FrameType
 from pinocchio.utils import rotate
 from hppfcl import Cylinder, Sphere
 
@@ -13,6 +13,9 @@ JOINT_SPHERE_RADIUS_FACTOR = 1.1
 SHOULDER_INITIAL_Z = 1.0
 SHOULDER_INITIAL_ROTATION = rotate('x', np.pi / 2.0)
 
+ELBOW_MIN_ANGLE = 0.0
+ELBOW_MAX_ANGLE = np.pi
+
 JOINT_SPHERE_COLOR = np.array([0.8, 0.3, 0.3, 1.0])
 UPPER_ARM_COLOR = np.array([0.3, 0.8, 0.3, 0.6])
 FOREARM_COLOR = np.array([0.3, 0.3, 0.8, 8.0])
@@ -20,6 +23,8 @@ FOREARM_COLOR = np.array([0.3, 0.3, 0.8, 8.0])
 END_EFFECTOR_FRAME_RADIUS = 0.01
 END_EFFECTOR_FRAME_LENGTH = 0.1
 
+MAX_NP_FLOAT64 = np.finfo(np.float64).max
+MAX_MVT_BOX = 1.0
 
 
 # Arm definition
@@ -57,6 +62,10 @@ class ArmRobot(RobotWrapper):
                 np.array([0.0, 0.0, SHOULDER_INITIAL_Z])
             ),
             "shoulder",
+            # np.full(6, MAX_NP_FLOAT64),
+            # np.full(6, MAX_NP_FLOAT64),
+            # np.concatenate([np.full(3, MAX_MVT_BOX), np.full(4, MAX_NP_FLOAT64)]),
+            # np.concatenate([np.full(3, -MAX_MVT_BOX), np.full(4, MAX_NP_FLOAT64)]),
         )
 
         # Add inertia to the shoulder joint
@@ -70,7 +79,7 @@ class ArmRobot(RobotWrapper):
         )
 
         # Add elbow joint (revolute) to model
-        elbow_joint = JointModelRUBY()
+        elbow_joint = JointModelRY()
         elbow_joint_id = model.addJoint(
             shoulder_joint_id,
             elbow_joint,
@@ -79,6 +88,10 @@ class ArmRobot(RobotWrapper):
                 np.array([0.0, 0.0, upper_arm_length]),
             ),
             "elbow",
+            np.full(1, MAX_NP_FLOAT64),
+            np.full(1, MAX_NP_FLOAT64),
+            np.full(1, ELBOW_MIN_ANGLE),
+            np.full(1, ELBOW_MAX_ANGLE),
         )
 
         # Add inertia to the elbow joint
