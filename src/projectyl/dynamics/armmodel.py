@@ -33,7 +33,8 @@ MAX_MVT_BOX = 1.0
 class ArmRobot(RobotWrapper):
 
     def __init__(self, upper_arm_length: float, forearm_length: float, headless: bool = False, verbose: bool = False):
-
+        self.upper_arm_length = upper_arm_length
+        self.forearm_length = forearm_length
         # Initialize the arm model
         model = self._build_model(upper_arm_length, forearm_length)
 
