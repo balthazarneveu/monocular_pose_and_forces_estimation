@@ -50,11 +50,13 @@ python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed --resiz
 |  OpenCV [convention](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html) | Pinocchio convention |
 
 - [test_camera_projection.py](/test/test_camera_projection.py) has a numerical example showing how you project a 3D point in the pinocchio referential onto the sensor.
-  - The top of the Eiffel Tower located $h=324m$ above the ground
-  - located at $d=6km$ away from the camera
-  - Camera is a Canon 5D MarkIII 24Mpix camera with a full frame sensor (24mm x 36mm) 
-  - with a $\mu=6\text{µm}$ pixel pitch.
+  - The top of the Eiffel Tower located $Z=324m$ above the ground (*$Z$  world coordinates*)
+  - is at a distance $Y=6km$ away from the camera (*$Y$ in world coordinates*)
+  - Camera is a Canon 5D MarkIII 24Mpix ($h=4000$, $w=6000$) camera 
+  - The full frame sensor (24mm x 36mm) has a $\mu=6\text{µm}$ pixel pitch.
   - $f_{\text{pix}} = \frac{f=\text{focal length}}{\mu=\text{pixel pitch}}$
+  - $y - \frac{h}{2}= \frac{Z.f}{Y} \approx \frac{-324*8333}{6000} \approx{-450pixels}$
+
 
 -----
 
