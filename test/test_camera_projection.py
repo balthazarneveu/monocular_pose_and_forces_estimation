@@ -1,5 +1,5 @@
 from typing import List
-from projectyl.utils.properties import COLOR, POSITION, SIZE
+from projectyl.utils.properties import COLOR, POSITION, SIZE, CAMERA
 from projectyl.utils.camera_projection import get_intrinic_matrix, get_4D_homogeneous_vector, project_3D_point
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
 from pinocchio import SE3
@@ -26,7 +26,7 @@ def get_sample_scene():
             POSITION: [0., 100., 25.],
             SIZE: [10., 10., 10.]
         },
-        "camera": {
+        CAMERA: {
             COLOR: [1., 0.5, 0.5, 1.],
             POSITION: [0., -2., 1.],
             SIZE: [0.05, 0.2, 0.05]
@@ -62,10 +62,10 @@ def project_scene_sample(object_list: List[dict]):
     intrinsic_matrix = get_intrinic_matrix((h, w), fpix=600.)
     extrinsic_matrix = np.zeros((3, 4))
     extrinsic_matrix[:3, :3] = np.eye(3)
-    cam_pos = get_4D_homogeneous_vector(object_list["camera"][POSITION])
+    cam_pos = get_4D_homogeneous_vector(object_list[CAMERA][POSITION])
     extrinsic_matrix[:3, -1] = -cam_pos[:3, 0]
     for _idx, (name, obj) in enumerate(object_list.items()):
-        if name == "camera":
+        if name == CAMERA:
             continue
         pos = obj[POSITION]
         # Project 3D point to the image coordinate system

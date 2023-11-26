@@ -6,6 +6,7 @@ from projectyl.dynamics.armmodel import ArmRobot
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
 from typing import Union, Optional, Tuple, List
 import logging
+from projectyl.utils.properties import SHOULDER, ELBOW, WRIST
 
 
 def extract_dim(vec: np.ndarray, start: int, end: int) -> np.ndarray:
@@ -119,7 +120,7 @@ def get_frame_id(arm: ArmRobot, frame: Union[str, int]) -> int:
 
 def forward_kinematics(
     arm: ArmRobot, q: np.ndarray,
-    frame: Optional[Union[str, int]] = "end_effector"
+    frame: Optional[Union[str, int]] = WRIST
 ) -> Tuple[pin.SE3, np.ndarray]:
     frame_id = get_frame_id(arm, frame)
     pin.framesForwardKinematics(arm.model, arm.data, q)
@@ -142,7 +143,7 @@ def build_arm_model(global_params: dict = {}):
 
 def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow=False, scale_constant=1.):
     # shoulder, elbow, wrist
-    SHOULDER, ELBOW, WRIST = "shoulder", "elbow", "wrist"
+    
     COLORS = {
         SHOULDER: [.5, .1, .1, 1.],
         ELBOW: [.1, 1., .1, 1.],
@@ -178,11 +179,11 @@ def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow
     task_list = []
     if fit_wrist:
         task_list.append(
-            (arm.model.getFrameId("end_effector"), joint_estimated_poses[WRIST], (0, 3)),
+            (arm.model.getFrameId(WRIST), joint_estimated_poses[WRIST], (0, 3)),
         )
     if fit_elbow:
         task_list.append(
-            (arm.model.getFrameId("elbow"), joint_estimated_poses[ELBOW], (1, 2) if fit_wrist else (0, 3)),
+            (arm.model.getFrameId(ELBOW), joint_estimated_poses[ELBOW], (1, 2) if fit_wrist else (0, 3)),
         )
     q = global_params.get("q", None)
     q = solve_tasks(
