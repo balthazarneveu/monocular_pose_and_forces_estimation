@@ -18,8 +18,8 @@ ELBOW_MIN_ANGLE = 0.0
 ELBOW_MAX_ANGLE = np.pi
 
 JOINT_SPHERE_COLOR = np.array([0.8, 0.3, 0.3, 1.0])
-UPPER_ARM_COLOR = np.array([0.3, 0.8, 0.3, 0.6])
-FOREARM_COLOR = np.array([0.3, 0.3, 0.8, 8.0])
+UPPER_ARM_COLOR = np.array([0., 0.8, 0., 0.5])
+FOREARM_COLOR = np.array([0., 0., 1., 0.5])
 
 END_EFFECTOR_FRAME_RADIUS = 0.01
 END_EFFECTOR_FRAME_LENGTH = 0.1
@@ -218,7 +218,7 @@ class ArmRobot(RobotWrapper):
                 x @ med + position_effector
             ),
         )
-        frame_x_geometry.meshColor = np.array([1.0, 0.0, 0.0, 1.0])
+        frame_x_geometry.meshColor = np.array([0.2, 0.0, 1.0, 1.0])
 
         frame_y_geometry = GeometryObject(
             "frame_axis_y",
@@ -230,7 +230,7 @@ class ArmRobot(RobotWrapper):
                 y @ med + position_effector
             ),
         )
-        frame_y_geometry.meshColor = np.array([0.0, 1.0, 0.0, 1.0])
+        frame_y_geometry.meshColor = np.array([0.0, 0.2, 1.0, 1.0])
 
         frame_z_geometry = GeometryObject(
             "frame_axis_z",
