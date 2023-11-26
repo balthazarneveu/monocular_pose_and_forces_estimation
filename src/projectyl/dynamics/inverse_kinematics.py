@@ -174,9 +174,30 @@ def update_arm_model(
     joint_estimated_poses = {}
     for joint_name, joint_pos in arm_estim.items():
         joint_estimated_pose = get_estimated_arm_se3(joint_pos)
-        viz.addBox(joint_name, [.05, .05, .05], COLORS_LIST[joint_name])
-        viz.applyConfiguration(joint_name, joint_estimated_pose)
         joint_estimated_poses[joint_name] = joint_estimated_pose
+
+    def standardize_length(
+        joint_estimated_poses, forced_length,
+        start_name=SHOULDER, end_name=ELBOW,
+        sanity_check=False
+    ):
+        start_pos = joint_estimated_poses[start_name].translation
+        end_pos = joint_estimated_poses[end_name].translation
+        length = np.sqrt(((end_pos - start_pos)**2).sum())
+        new_end_pos = start_pos + (end_pos - start_pos)/length*forced_length
+        joint_estimated_poses[end_name].translation = new_end_pos
+        if sanity_check:
+            start_pos = joint_estimated_poses[start_name].translation
+            end_pos = joint_estimated_poses[end_name].translation
+            length = np.sqrt(((end_pos - start_pos)**2).sum())
+            assert np.isclose(length, forced_length), f"Length is {length} instead of {forced_length}"
+    standardize_length(joint_estimated_poses, start_name=SHOULDER, end_name=ELBOW, forced_length=arm.upper_arm_length)
+    standardize_length(joint_estimated_poses, start_name=ELBOW, end_name=WRIST, forced_length=arm.forearm_length)
+
+    for joint_name, joint_pos in arm_estim.items():
+        viz.addBox(joint_name, [.05, .05, .05], COLORS_LIST[joint_name])
+        viz.applyConfiguration(joint_name, joint_estimated_poses[joint_name])
+
     task_list = []
     if fit_wrist:
         task_list.append(
