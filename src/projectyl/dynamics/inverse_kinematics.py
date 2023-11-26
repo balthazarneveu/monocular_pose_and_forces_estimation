@@ -133,7 +133,7 @@ def forward_kinematics(
 def build_arm_model(global_params: dict = {}):
     arm = global_params.get("arm", None)
     if arm is None:
-        arm = ArmRobot(upper_arm_length=0.3, forearm_length=0.25)
+        arm = ArmRobot(upper_arm_length=0.23, forearm_length=0.27)
         global_params["arm"] = arm
     viz = global_params.get("viz", None)
     if viz is None:
