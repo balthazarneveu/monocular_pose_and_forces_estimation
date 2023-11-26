@@ -1,4 +1,4 @@
-from projectyl.utils.properties import COLOR, POSITION, SIZE, ELBOW, SHOULDER, WRIST, CAMERA
+from projectyl.utils.properties import COLOR, POSITION, SIZE, ELBOW, SHOULDER, WRIST, CAMERA, LEFT, RIGHT
 from projectyl.utils.interactive import frame_selector, crop
 from interactive_pipe import interactive, interactive_pipeline
 from projectyl.algo.pose_estimation import draw_landmarks_on_image
@@ -6,7 +6,10 @@ from typing import Union, List
 import numpy as np
 from pathlib import Path
 from projectyl.dynamics.inverse_kinematics import update_arm_model, build_arm_model
-from projectyl.utils.camera_projection import project_3D_point, get_intrinic_matrix, get_4D_homogeneous_vector, get_focal_from_full_frame_equivalent, rescale_focal
+from projectyl.utils.camera_projection import (
+    project_3D_point, get_intrinic_matrix, get_4D_homogeneous_vector,
+    get_focal_from_full_frame_equivalent, rescale_focal
+)
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
 from projectyl.dynamics.inverse_kinematics import forward_kinematics
 from pinocchio import SE3
@@ -15,13 +18,15 @@ import cv2 as cv
 
 @interactive(
     pose_overlay=(True, "pose_overlay"),
+    arm_side=(LEFT, [LEFT, RIGHT], "arm_side"),
     joint_id=(-1, [-2, 32, 1])
 )
-def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, joint_id=-1):
+def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, joint_id=-1, arm_side=LEFT):
     if not pose_overlay:
         return frame
     frame_idx = global_params["frame_idx"]
-    new_annot = draw_landmarks_on_image(frame, pose_annotations[frame_idx], joint_id=joint_id)
+    new_annot = draw_landmarks_on_image(
+        frame, pose_annotations[frame_idx], joint_id=joint_id, left_arm=(arm_side == LEFT))
     return new_annot
 
 
