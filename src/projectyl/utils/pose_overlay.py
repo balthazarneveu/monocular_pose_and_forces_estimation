@@ -25,6 +25,7 @@ def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, j
     if not pose_overlay:
         return frame
     frame_idx = global_params["frame_idx"]
+    global_params["side"] = arm_side
     new_annot = draw_landmarks_on_image(
         frame, pose_annotations[frame_idx], joint_id=joint_id, left_arm=(arm_side == LEFT))
     return new_annot
@@ -40,7 +41,7 @@ def update_arm_model_filter(body_pose_full, update_arm=True, fit_mode=WRIST, sca
         build_arm_model(global_params=global_params)
         update_arm_model(body_pose_full, global_params=global_params,
                          fit_elbow=ELBOW in fit_mode, fit_wrist=WRIST in fit_mode,
-                         scale_constant=scale_constant)
+                         scale_constant=scale_constant, arm_side=global_params.get("side", LEFT))
 
 
 def make_a_scene_in_3D(object_list, viz: MeshcatVisualizer = None) -> MeshcatVisualizer:
