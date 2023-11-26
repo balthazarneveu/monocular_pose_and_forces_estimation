@@ -142,7 +142,7 @@ def build_arm_model(global_params: dict = {}):
 
 
 def permute_estimated_poses(joint_pos):
-    target_position = np.array([0., joint_pos[0], -joint_pos[1]])
+    target_position = np.array([joint_pos[0], 0., -joint_pos[1]])
     return target_position
 
 
