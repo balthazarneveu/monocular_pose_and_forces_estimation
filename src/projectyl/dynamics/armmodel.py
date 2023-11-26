@@ -103,7 +103,7 @@ class ArmRobot(RobotWrapper):
             FrameType.OP_FRAME,
         )
         model.addFrame(end_effector_frame)
-
+        # Elbow anchor point
         elbow_point = Frame(
             "elbow",
             shoulder_joint_id,
@@ -115,6 +115,18 @@ class ArmRobot(RobotWrapper):
             FrameType.OP_FRAME,
         )
         model.addFrame(elbow_point)
+        # Shoulder anchor point
+        shoulder_point = Frame(
+            "shoulder",
+            shoulder_joint_id,
+            0,
+            SE3(
+                np.eye(3),
+                np.array([0.0, 0.0, 0.])
+            ),
+            FrameType.OP_FRAME,
+        )
+        model.addFrame(shoulder_point)
         return model
 
 
