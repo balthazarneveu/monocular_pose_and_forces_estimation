@@ -91,3 +91,54 @@ def project_3D_point(
     pos2d = intrinsic_matrix.dot(ext_vec)
     pos2d = pos2d[:2, 0] / pos2d[2, 0]
     return pos2d
+
+# Utilities to get realistic camera parameters
+
+
+def get_focal_from_full_frame_equivalent(
+    focal_length_equivalent_24x36=0.024,
+    w: int = 4000,  # image width [pixels]
+    # h: int = 3000,
+    pixel_pitch: float = 2.*1.4E-6  # 12Mpix (binned quadbayers)
+) -> float:
+    """Get the right focal in pixels for a given sensor size
+    and 24x36mm full frame focal length equivalent
+    Example for Xiaomi Mi 11 Ultra photo 12Mpix
+
+    Args:
+        focal_length_equivalent_24x36 (float, optional): 24mm full frame equivalent. Defaults to 0.024.
+        w (int, optional): Image width 4000x3000=12Mpix -> 4000. Defaults to 4000.
+        pixel_pitch (float): Size in meters (2.8µm = 2*1.4µm after binning)
+
+    Returns:
+        float: focal in pixels, ready to insert in the diagonals of the intrinic matrix
+        ~ 2666 pixels
+    """
+    sensor_w = w*pixel_pitch
+    # sensor_h = h*pixel_pitch
+    full_frame_36mm_w = 36E-3
+    # full_frame_24mm_h = 24E-3
+    focal = focal_length_equivalent_24x36 * sensor_w / full_frame_36mm_w
+    fpix = focal/pixel_pitch
+    return fpix  # ~2600
+
+
+def rescale_focal(
+    fpix: float = get_focal_from_full_frame_equivalent(),
+    w: int = 4000,  # full original size
+    w_resized: int = 1920  # downscaled size
+) -> float:
+    """Provide the right focal length for a downsampled image
+    Resizing the image will change the focal length in pixels
+
+    Args:
+        fpix (float, optional): Focal length in pixels. Defaults to get_focal_from_full_frame_equivalent().
+        w (int, optional): _description_. Defaults to 4000. for 12Mpix photo mode
+        w_resized (int, optional): Resized video size. Defaults to 1920 for Full HD 1080p.
+
+    Returns:
+        float: Resized focal length in pixels
+    """
+    virtual_pixel_pitch_ratio = w/w_resized  # Virtual equivalent bigger pixels pitch -> 4000/1920
+    fpix_resized = fpix/virtual_pixel_pitch_ratio
+    return fpix_resized
