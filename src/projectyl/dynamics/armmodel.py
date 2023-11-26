@@ -17,7 +17,8 @@ SHOULDER_INITIAL_ROTATION = rotate('x', np.pi / 2.0)
 ELBOW_MIN_ANGLE = 0.0
 ELBOW_MAX_ANGLE = np.pi
 
-JOINT_SPHERE_COLOR = np.array([0.8, 0.3, 0.3, 1.0])
+JOINT_SHOULDER_COLOR = np.array([0.8, 0.3, 0.3, 0.8])
+JOINT_ELBOW_COLOR = np.array([0.1, 0.9, 0.3, 0.8])
 UPPER_ARM_COLOR = np.array([0., 0.8, 0., 0.5])
 FOREARM_COLOR = np.array([0., 0., 1., 0.5])
 
@@ -157,7 +158,7 @@ class ArmRobot(RobotWrapper):
                 np.zeros(3)
             ),
         )
-        shoulder_geometry.meshColor = JOINT_SPHERE_COLOR
+        shoulder_geometry.meshColor = JOINT_SHOULDER_COLOR
 
         # GeometryObject for the upper_arm
         upper_arm_geometry = GeometryObject(
@@ -183,7 +184,7 @@ class ArmRobot(RobotWrapper):
                 np.zeros(3)
             ),
         )
-        elbow_geometry.meshColor = JOINT_SPHERE_COLOR
+        elbow_geometry.meshColor = JOINT_ELBOW_COLOR
 
         # GeometryObject for the upper_arm
         forearm_geometry = GeometryObject(
