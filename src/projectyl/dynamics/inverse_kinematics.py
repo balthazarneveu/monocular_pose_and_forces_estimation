@@ -182,7 +182,7 @@ def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow
         )
     if fit_elbow:
         task_list.append(
-            (arm.model.getFrameId("elbow"), joint_estimated_poses[ELBOW], (0, 3)),
+            (arm.model.getFrameId("elbow"), joint_estimated_poses[ELBOW], (1, 2) if fit_wrist else (0, 3)),
         )
     q = global_params.get("q", None)
     q = solve_tasks(
