@@ -58,6 +58,12 @@ python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed --resiz
   - $y - \frac{h}{2}= \frac{Z.f}{Y} \approx \frac{-324*8333}{6000} \approx{-450pixels}$
 
 
+### Projecting the arm into the camera plane
+| Camera | World |
+|:------:|:-----:|
+| ![](/report/figures/arm_camera_projection.png) | ![](/report/figures/arm_world.png) |
+
+
 -----
 
 ## Extra
