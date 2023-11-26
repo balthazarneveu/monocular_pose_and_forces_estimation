@@ -20,7 +20,7 @@ def draw_joint(annotated_image, pose_landmarks, current_joint_id, color=(0, 255,
     )
 
 
-def draw_landmarks_on_image(rgb_image, pose_landmarks_list, joint_id=-1):
+def draw_landmarks_on_image(rgb_image, pose_landmarks_list, joint_id=-1, left_arm=True):
     annotated_image = np.copy(rgb_image)
     # Loop through the detected poses to visualize.
     for idx in range(len(pose_landmarks_list)):
@@ -48,10 +48,19 @@ def draw_landmarks_on_image(rgb_image, pose_landmarks_list, joint_id=-1):
             # 12 - right shoulder
             # 14 - right elbow
             # 16 - right wrist
-            for current_joint_id in [11, 13, 15]:
-                draw_joint(annotated_image, pose_landmarks, current_joint_id, color=(0, 255, 0))
-            for current_joint_id in [12, 14, 16]:
-                draw_joint(annotated_image, pose_landmarks, current_joint_id, color=(255, 0, 0))
+
+            joints = [11, 13, 15] if left_arm else [12, 14, 16]
+            for idx, (current_joint_id, color) in enumerate(zip(joints, [(255, 0, 0), (0, 255, 0), (0, 0, 255)])):
+                draw_joint(annotated_image, pose_landmarks, current_joint_id, color=color)
+                if idx > 0:
+                    cv.line(
+                        annotated_image,
+                        (int(pose_landmarks[joints[idx-1]].x*annotated_image.shape[1]),
+                            int(pose_landmarks[joints[idx-1]].y*annotated_image.shape[0])),
+                        (int(pose_landmarks[current_joint_id].x*annotated_image.shape[1]),
+                            int(pose_landmarks[current_joint_id].y*annotated_image.shape[0])),
+                        color, 10
+                    )
         else:
             draw_joint(annotated_image, pose_landmarks, joint_id)
 
