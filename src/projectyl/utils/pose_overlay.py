@@ -1,4 +1,4 @@
-from time import sleep
+from projectyl.utils.properties import SHOULDER, ELBOW, WRIST
 from projectyl.utils.interactive import frame_selector, crop
 from interactive_pipe import interactive, interactive_pipeline
 from projectyl.algo.pose_estimation import draw_landmarks_on_image
@@ -22,14 +22,14 @@ def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, j
 
 @interactive(
     update_arm=(True, "update_arm"),
-    fit_mode=("wrist", ["elbow", "wrist", "elbow+wrist"], "fit_mode"),
+    fit_mode=(WRIST, [ELBOW, WRIST, "elbow+wrist"], "fit_mode"),
     scale_constant=(5., [0.1, 10.], "scale_constant"),
 )
-def update_arm_model_filter(body_pose_full, update_arm=True, fit_mode="wrist", scale_constant=5., global_params={}):
+def update_arm_model_filter(body_pose_full, update_arm=True, fit_mode=WRIST, scale_constant=5., global_params={}):
     if update_arm:
         build_arm_model(global_params=global_params)
         update_arm_model(body_pose_full, global_params=global_params,
-                         fit_elbow="elbow" in fit_mode, fit_wrist="wrist" in fit_mode,
+                         fit_elbow=ELBOW in fit_mode, fit_wrist=WRIST in fit_mode,
                          scale_constant=scale_constant)
 
 

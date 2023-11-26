@@ -3,6 +3,7 @@ import numpy as np
 from pinocchio import RobotWrapper, SE3, Model, Inertia, JointModelFreeFlyer, JointModelSpherical, JointModelRY, GeometryModel, GeometryObject, Frame, FrameType
 from pinocchio.utils import rotate
 from hppfcl import Cylinder, Sphere
+from projectyl.utils.properties import SHOULDER, ELBOW, WRIST
 
 # Constants
 ARM_SEGMENT_MASS = 1.0
@@ -30,13 +31,13 @@ MAX_MVT_BOX = 1.0
 # Arm definition
 class ArmRobot(RobotWrapper):
 
-    def __init__(self, upper_arm_length:float, forearm_length: float, headless: bool=False, verbose: bool=False):
+    def __init__(self, upper_arm_length: float, forearm_length: float, headless: bool = False, verbose: bool = False):
 
         # Initialize the arm model
         model = self._build_model(upper_arm_length, forearm_length)
 
-        # Initialize the arm collision model 
-        collision_model = GeometryModel() # Useless apriori, but cannot be None (else error with viz)
+        # Initialize the arm collision model
+        collision_model = GeometryModel()  # Useless apriori, but cannot be None (else error with viz)
 
         # Initialize the arm visual model
         visual_model = None
@@ -55,13 +56,13 @@ class ArmRobot(RobotWrapper):
         # Add shoulder joint (spherical) to model
         shoulder_joint = JointModelSpherical()
         shoulder_joint_id = model.addJoint(
-            0, 
+            0,
             shoulder_joint,
             SE3(
                 SHOULDER_INITIAL_ROTATION,
                 np.array([0.0, 0.0, SHOULDER_INITIAL_Z])
             ),
-            "shoulder",
+            SHOULDER,
             # np.full(6, MAX_NP_FLOAT64),
             # np.full(6, MAX_NP_FLOAT64),
             # np.concatenate([np.full(3, MAX_MVT_BOX), np.full(4, MAX_NP_FLOAT64)]),
@@ -87,7 +88,7 @@ class ArmRobot(RobotWrapper):
                 np.eye(3),
                 np.array([0.0, 0.0, upper_arm_length]),
             ),
-            "elbow",
+            ELBOW,
             np.full(1, MAX_NP_FLOAT64),
             np.full(1, MAX_NP_FLOAT64),
             np.full(1, ELBOW_MIN_ANGLE),
@@ -99,18 +100,18 @@ class ArmRobot(RobotWrapper):
             elbow_joint_id,
             forearm_inertia,
             SE3(
-                np.eye(3), 
+                np.eye(3),
                 np.array([0.0, 0.0, forearm_length / 2.0]),
             ),
         )
-        
+
         # Add end-effector frame at the end of the forearm
         end_effector_frame = Frame(
-            "end_effector", 
-            elbow_joint_id, 
+            WRIST,
+            elbow_joint_id,
             0,
             SE3(
-                np.eye(3), 
+                np.eye(3),
                 np.array([0.0, 0.0, forearm_length])
             ),
             FrameType.OP_FRAME,
@@ -118,7 +119,7 @@ class ArmRobot(RobotWrapper):
         model.addFrame(end_effector_frame)
         # Elbow anchor point
         elbow_point = Frame(
-            "elbow",
+            ELBOW,
             shoulder_joint_id,
             0,
             SE3(
@@ -130,7 +131,7 @@ class ArmRobot(RobotWrapper):
         model.addFrame(elbow_point)
         # Shoulder anchor point
         shoulder_point = Frame(
-            "shoulder",
+            SHOULDER,
             shoulder_joint_id,
             0,
             SE3(
@@ -142,64 +143,63 @@ class ArmRobot(RobotWrapper):
         model.addFrame(shoulder_point)
         return model
 
-
     def _build_visual_model(self, upper_arm_length: float, forearm_length: float, model: Model):
         visual_model = GeometryModel()
 
         # GeometryObject for the shoulder joint
         shoulder_geometry = GeometryObject(
-            "shoulder_geom", 
+            "shoulder_geom",
             0,
-            model.getJointId("shoulder"),  
-            Sphere(JOINT_SPHERE_RADIUS_FACTOR * UPPER_ARM_RADIUS),  
+            model.getJointId(SHOULDER),
+            Sphere(JOINT_SPHERE_RADIUS_FACTOR * UPPER_ARM_RADIUS),
             SE3(
-                np.eye(3), 
+                np.eye(3),
                 np.zeros(3)
-            ), 
+            ),
         )
         shoulder_geometry.meshColor = JOINT_SPHERE_COLOR
 
         # GeometryObject for the upper_arm
         upper_arm_geometry = GeometryObject(
-            "upper_arm_geom", 
+            "upper_arm_geom",
             0,
-            model.getJointId("shoulder"),  
-            Cylinder(UPPER_ARM_RADIUS, upper_arm_length),  
+            model.getJointId(SHOULDER),
+            Cylinder(UPPER_ARM_RADIUS, upper_arm_length),
             SE3(
-                np.eye(3), 
+                np.eye(3),
                 np.array([0.0, 0.0, upper_arm_length / 2.0])
-            ), 
+            ),
         )
         upper_arm_geometry.meshColor = UPPER_ARM_COLOR
 
         # GeometryObject for the elbow joint
         elbow_geometry = GeometryObject(
-            "elbow_geom", 
+            "elbow_geom",
             0,
-            model.getJointId("elbow"),  
-            Sphere(JOINT_SPHERE_RADIUS_FACTOR * UPPER_ARM_RADIUS),  
+            model.getJointId(ELBOW),
+            Sphere(JOINT_SPHERE_RADIUS_FACTOR * UPPER_ARM_RADIUS),
             SE3(
-                np.eye(3), 
+                np.eye(3),
                 np.zeros(3)
-            ), 
+            ),
         )
         elbow_geometry.meshColor = JOINT_SPHERE_COLOR
 
         # GeometryObject for the upper_arm
         forearm_geometry = GeometryObject(
-            "forearm_geom", 
+            "forearm_geom",
             0,
-            model.getJointId("elbow"),  
-            Cylinder(FOREAMR_RADIUS, forearm_length),  
+            model.getJointId(ELBOW),
+            Cylinder(FOREAMR_RADIUS, forearm_length),
             SE3(
-                np.eye(3), 
+                np.eye(3),
                 np.array([0.0, 0.0, forearm_length / 2.0])
             ),
         )
         forearm_geometry.meshColor = FOREARM_COLOR
-        
+
         # Geometry objects for the end-effector frame
-        end_effector_frame_id = model.getFrameId("end_effector")
+        end_effector_frame_id = model.getFrameId(WRIST)
         parent_frame_id = model.frames[end_effector_frame_id].parent
 
         x = rotate('y', np.pi / 2.0)
@@ -209,9 +209,9 @@ class ArmRobot(RobotWrapper):
         med = np.array([0.0, 0.0, END_EFFECTOR_FRAME_LENGTH / 2.0])
 
         frame_x_geometry = GeometryObject(
-            "frame_axis_x", 
-            end_effector_frame_id, 
-            parent_frame_id, 
+            "frame_axis_x",
+            end_effector_frame_id,
+            parent_frame_id,
             Cylinder(END_EFFECTOR_FRAME_RADIUS, END_EFFECTOR_FRAME_LENGTH),
             SE3(
                 x,
@@ -221,9 +221,9 @@ class ArmRobot(RobotWrapper):
         frame_x_geometry.meshColor = np.array([1.0, 0.0, 0.0, 1.0])
 
         frame_y_geometry = GeometryObject(
-            "frame_axis_y", 
-            end_effector_frame_id, 
-            parent_frame_id, 
+            "frame_axis_y",
+            end_effector_frame_id,
+            parent_frame_id,
             Cylinder(END_EFFECTOR_FRAME_RADIUS, END_EFFECTOR_FRAME_LENGTH),
             SE3(
                 y,
@@ -233,9 +233,9 @@ class ArmRobot(RobotWrapper):
         frame_y_geometry.meshColor = np.array([0.0, 1.0, 0.0, 1.0])
 
         frame_z_geometry = GeometryObject(
-            "frame_axis_z", 
-            end_effector_frame_id, 
-            parent_frame_id, 
+            "frame_axis_z",
+            end_effector_frame_id,
+            parent_frame_id,
             Cylinder(END_EFFECTOR_FRAME_RADIUS, END_EFFECTOR_FRAME_LENGTH),
             SE3(
                 z,
@@ -254,4 +254,3 @@ class ArmRobot(RobotWrapper):
         visual_model.addGeometryObject(frame_z_geometry)
 
         return visual_model
-
