@@ -60,8 +60,8 @@ def get_intrinic_matrix(img_shape: Tuple[int], fpix: float = 600.) -> np.ndarray
         np.ndarray: [3,3] `K` camera matrix
     """
     intrinic_matrix = np.diag([fpix, fpix, 1.])
-    intrinic_matrix[0, 2] = img_shape[1]/2.
-    intrinic_matrix[1, 2] = img_shape[0]/2.
+    intrinic_matrix[0, 2] = float(img_shape[1])/2.
+    intrinic_matrix[1, 2] = float(img_shape[0])/2.
     return intrinic_matrix
 
 
@@ -90,5 +90,4 @@ def project_3D_point(
     ext_vec = extrinsic_matrix.dot(pos)
     pos2d = intrinsic_matrix.dot(ext_vec)
     pos2d = pos2d[:2, 0] / pos2d[2, 0]
-    pos2d = pos2d.astype(int)
     return pos2d

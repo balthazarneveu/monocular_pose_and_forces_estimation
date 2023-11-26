@@ -73,8 +73,8 @@ def project_scene_sample(object_list: List[dict]):
 
         # Plot the 2D point on the image
         color = ((np.array(obj[COLOR][:3])*255).astype(int)).tolist()
-        cv.circle(img, (pos2d[0], pos2d[1]), 5, tuple(color), -1)
-        cv.putText(img, name, (pos2d[0]+5, pos2d[1]+5), cv.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv.LINE_AA)
+        cv.circle(img, (int(pos2d[0]), int(pos2d[1])), 5, tuple(color), -1)
+        cv.putText(img, name, (int(pos2d[0])+5, int(pos2d[1])+5), cv.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv.LINE_AA)
     cv.line(img, (0, h//2), (w, h//2), (255, 255, 255), 2)
     cv.line(img, (w//2, 0), (w//2, h), (255, 255, 255), 2)
     cv.circle(img, (w//2, h//2), 5, (255, 0, 0), -1)
@@ -83,11 +83,38 @@ def project_scene_sample(object_list: List[dict]):
     plt.show()
 
 
-def test_camera_projection():
+def visual_camera_projection():
     object_list = get_sample_scene()
     make_a_scene_in_3D(object_list)
     project_scene_sample(object_list)
 
 
+def test_camera_projection():
+    """Numerical validation of the camera projection
+    50 mm on a Canon 5D Mark III
+    Eiffel tower is 324 m high
+    At 6km away from my window
+
+    Eiffer tower is upwards, 3D vector Y axis should be positive
+    so the 2D vector should be negative (matrix notation and opencv notations)
+    """
+    #
+    w, h = (6000, 4000)
+    focal_length = 50.E-3
+    pixel_pitch = 6.E-6
+    fpix = focal_length/pixel_pitch
+    intrinsic_matrix = get_intrinic_matrix((h, w), fpix=fpix)
+    extrinsic_matrix = np.zeros((3, 4))
+    extrinsic_matrix[:3, :3] = np.eye(3)
+    distance = 6000.
+    height = 324.
+    eiffel_tower = np.array([0., distance, height])
+    eiffel_tower_2d = project_3D_point(eiffel_tower, intrinsic_matrix, extrinsic_matrix)
+    eiffel_tower_vector_2d = eiffel_tower_2d - np.array([w/2., h/2.])
+    assert np.isclose(eiffel_tower_vector_2d, np.array([0., -height*fpix/distance])).all()
+
+
 if __name__ == "__main__":
     test_camera_projection()
+    visual_camera_projection()
+    # test_visual_camera_projection()
