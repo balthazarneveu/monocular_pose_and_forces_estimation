@@ -141,10 +141,14 @@ def build_arm_model(global_params: dict = {}):
         global_params["viz"] = viz
 
 
+def permute_estimated_poses(joint_pos):
+    target_position = np.array([0., joint_pos[0], -joint_pos[1]])
+    return target_position
+
+
 def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow=False, scale_constant=1.):
     # shoulder, elbow, wrist
-    
-    COLORS = {
+    COLORS_LIST = {
         SHOULDER: [.5, .1, .1, 1.],
         ELBOW: [.1, 1., .1, 1.],
         WRIST:  [.1, .1, 1., 1.],
@@ -161,10 +165,11 @@ def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow
         ]
     arm = global_params.get("arm", None)
     viz = global_params.get("viz", None)
-    shoulder_pos = np.array([0., arm_estim[SHOULDER][0], -arm_estim[SHOULDER][1]])
+    shoulder_pos = permute_estimated_poses(arm_estim[SHOULDER])
+    # shoulder_pos = np.array([0., arm_estim[SHOULDER][0], -arm_estim[SHOULDER][1]])
 
     def get_estimated_arm_se3(joint_pos):
-        target_position = np.array([0., joint_pos[0], -joint_pos[1]])
+        target_position = permute_estimated_poses(joint_pos)
         target_position = scale_constant*(target_position - shoulder_pos) + np.array([0., 0., 1.])
         new_pose = pin.SE3()
         new_pose.rotation = np.eye(3)
@@ -173,7 +178,7 @@ def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow
     joint_estimated_poses = {}
     for joint_name, joint_pos in arm_estim.items():
         joint_estimated_pose = get_estimated_arm_se3(joint_pos)
-        viz.addBox(joint_name, [.05, .05, .05], COLORS[joint_name])
+        viz.addBox(joint_name, [.05, .05, .05], COLORS_LIST[joint_name])
         viz.applyConfiguration(joint_name, joint_estimated_pose)
         joint_estimated_poses[joint_name] = joint_estimated_pose
     task_list = []
