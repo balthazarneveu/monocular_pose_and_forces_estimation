@@ -6,7 +6,7 @@ from projectyl.dynamics.armmodel import ArmRobot
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
 from typing import Union, Optional, Tuple, List
 import logging
-from projectyl.utils.properties import SHOULDER, ELBOW, WRIST
+from projectyl.utils.properties import SHOULDER, ELBOW, WRIST, LEFT
 
 
 def extract_dim(vec: np.ndarray, start: int, end: int) -> np.ndarray:
@@ -146,7 +146,10 @@ def permute_estimated_poses(joint_pos):
     return target_position
 
 
-def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow=False, scale_constant=1.):
+def update_arm_model(
+    body_pose_full, global_params={}, fit_wrist=True,
+    fit_elbow=False, scale_constant=1., arm_side=LEFT
+):
     # shoulder, elbow, wrist
     COLORS_LIST = {
         SHOULDER: [.5, .1, .1, 1.],
@@ -156,7 +159,8 @@ def update_arm_model(body_pose_full, global_params={}, fit_wrist=True, fit_elbow
     arm_estim = {}
     frame_idx = global_params["frame_idx"]
     body_pose = body_pose_full[frame_idx][0]
-    correspondance = [(SHOULDER, 11), (ELBOW, 13), (WRIST, 15)]
+    correspondance = [(SHOULDER, 11), (ELBOW, 13), (WRIST, 15)] if arm_side == LEFT else [
+        (SHOULDER, 12), (ELBOW, 14), (WRIST, 16)]
     for joint_name, current_joint_id in correspondance:
         arm_estim[joint_name] = [
             body_pose[current_joint_id].x,
