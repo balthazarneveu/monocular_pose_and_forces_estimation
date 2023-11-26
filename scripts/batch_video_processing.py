@@ -14,6 +14,7 @@ from projectyl.utils.io import Dump
 from projectyl.algo.pose_estimation import get_pose, get_detector
 from projectyl.utils.pose_overlay import interactive_visualize_pose
 
+
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
     config_file = output/"config.yaml"
@@ -57,7 +58,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             pose_path = pose_annotation_img.with_suffix(".pkl")
             if pose_path.exists() and skip_existing:
                 assert pose_path.exists()
-                annotations = Dump.load_pickle(pose_path)
+                dic_annot = Dump.load_pickle(pose_path)
             else:
                 if not detector:
                     detector = get_detector()
@@ -66,8 +67,12 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
                     detector,
                     visualization_path=pose_annotation_img
                 )
-                Dump.save_pickle(annotations.pose_landmarks, pose_path)
-            pose_annotations.append(annotations)
+                dic_annot = {
+                    "pose_landmarks": annotations.pose_landmarks,
+                    "pose_world_landmarks": annotations.pose_world_landmarks
+                }
+                Dump.save_pickle(dic_annot, pose_path)
+            pose_annotations.append(dic_annot)
             pose_annotation_img_list.append(pose_annotation_img)
         interactive_visualize_pose(im_list, pose_annotations)
 

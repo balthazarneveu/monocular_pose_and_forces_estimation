@@ -4,7 +4,7 @@ import numpy as np
 from time import sleep
 from projectyl.dynamics.armmodel import ArmRobot
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
-from projectyl.utils.arm import retrieve_arm_estimation
+from projectyl.utils.arm import retrieve_arm_estimation, backward_project
 from typing import Union, Optional, Tuple, List
 import logging
 from projectyl.utils.properties import SHOULDER, ELBOW, WRIST, LEFT
@@ -143,7 +143,7 @@ def build_arm_model(global_params: dict = {}):
 
 
 def permute_estimated_poses(joint_pos):
-    target_position = np.array([joint_pos[0], 0., -joint_pos[1]])
+    target_position = np.array([joint_pos[0], joint_pos[2], -joint_pos[1]])
     return target_position
 
 
@@ -159,6 +159,7 @@ def update_arm_model(
     }
     frame_idx = global_params["frame_idx"]
     arm_estim = retrieve_arm_estimation(body_pose_full, frame_idx, arm_side)
+    # backward_project(arm_estim, global_params["intrisic_matrix"])
     arm = global_params.get("arm", None)
     viz = global_params.get("viz", None)
     shoulder_pos = permute_estimated_poses(arm_estim[SHOULDER])

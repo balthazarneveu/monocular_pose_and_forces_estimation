@@ -18,7 +18,7 @@ import cv2 as cv
 
 @interactive(
     pose_overlay=(True, "pose_overlay"),
-    arm_side=(LEFT, [LEFT, RIGHT], "arm_side"),
+    arm_side=(RIGHT, [LEFT, RIGHT], "arm_side"),
     joint_id=(-1, [-2, 32, 1])
 )
 def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, joint_id=-1, arm_side=LEFT):
@@ -27,14 +27,14 @@ def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, j
     frame_idx = global_params["frame_idx"]
     global_params["side"] = arm_side
     new_annot = draw_landmarks_on_image(
-        frame, pose_annotations[frame_idx], joint_id=joint_id, left_arm=(arm_side == LEFT))
+        frame, pose_annotations[frame_idx]["pose_landmarks"], joint_id=joint_id, left_arm=(arm_side == LEFT))
     return new_annot
 
 
 @interactive(
     update_arm=(True, "update_arm"),
     fit_mode=(WRIST, [ELBOW, WRIST, "elbow+wrist"], "fit_mode"),
-    scale_constant=(5., [0.1, 10.], "scale_constant"),
+    scale_constant=(1., [0.1, 10.], "scale_constant"),
 )
 def update_arm_model_filter(body_pose_full, update_arm=True, fit_mode=WRIST, scale_constant=5., global_params={}):
     if update_arm:
@@ -134,8 +134,17 @@ def forward_camera_projection(img_ref, fpix=1000., global_params={}):
     return cv.resize(img, None, fx=0.3, fy=0.3) / 255.
 
 
+@interactive()
+def get_camera_config_filter(img_ref, global_params={}):
+    h, w = img_ref.shape[:2]
+    k, extrinsic_matrix = get_camera_config(w, h)
+    global_params["intrisic_matrix"] = k
+    pass
+
+
 def visualize_pose(sequence, pose_annotations):
     frame = frame_selector(sequence)
+    get_camera_config_filter(frame)
     frame_overlay = overlay_pose(frame, pose_annotations)
     update_arm_model_filter(pose_annotations)
     reproj = forward_camera_projection(frame_overlay)

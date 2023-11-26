@@ -142,4 +142,3 @@ def rescale_focal(
     virtual_pixel_pitch_ratio = w/w_resized  # Virtual equivalent bigger pixels pitch -> 4000/1920
     fpix_resized = fpix/virtual_pixel_pitch_ratio
     return fpix_resized
-
