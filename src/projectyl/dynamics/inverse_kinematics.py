@@ -4,7 +4,7 @@ import numpy as np
 from time import sleep
 from projectyl.dynamics.armmodel import ArmRobot
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
-from projectyl.utils.arm import retrieve_arm_estimation, backward_project
+from projectyl.utils.arm import retrieve_arm_estimation
 from typing import Union, Optional, Tuple, List
 import logging
 from projectyl.utils.properties import SHOULDER, ELBOW, WRIST, LEFT
@@ -130,13 +130,13 @@ def forward_kinematics(
     return o_Mtool, o_Jtool
 
 
-def build_arm_model(global_params: dict = {}):
+def build_arm_model(global_params: dict = {}, headless=False):
     arm = global_params.get("arm", None)
     if arm is None:
         arm = ArmRobot(upper_arm_length=0.23, forearm_length=0.27)
         global_params["arm"] = arm
     viz = global_params.get("viz", None)
-    if viz is None:
+    if viz is None and not headless:
         viz = MeshcatVisualizer(arm)
         viz.display(arm.q0)
         global_params["viz"] = viz
@@ -224,3 +224,9 @@ def update_arm_model(
         arm=arm
     )
     global_params["q"] = q
+
+
+def coarse_inverse_kinematics_initialization(estimated_poses, headless: bool = True):
+    global_params = {}
+    build_arm_model(global_params=global_params, headless=headless)
+    # update_arm_model_filter(estimated_poses, global_params=global_params)
