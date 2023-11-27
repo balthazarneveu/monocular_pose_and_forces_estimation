@@ -29,7 +29,7 @@ wget -O pose_landmarker.task -q https://storage.googleapis.com/mediapipe-models/
 
 #### Tools
 ```bash
-python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __processed --resize 0.2
+python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __out -A pose ik --resize 0.2
 ```
 - `-i` regex or list of videos
 - `-o` output folder (*automatically created if not present*)
