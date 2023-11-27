@@ -204,8 +204,10 @@ def update_arm_model(
             end_pos = joint_estimated_poses[end_name].translation
             length = np.sqrt(((end_pos - start_pos)**2).sum())
             assert np.isclose(length, forced_length), f"Length is {length} instead of {forced_length}"
+    original_joint_3d_positions = joint_estimated_poses.copy()
     standardize_length(joint_estimated_poses, start_name=SHOULDER, end_name=ELBOW, forced_length=arm.upper_arm_length)
     standardize_length(joint_estimated_poses, start_name=ELBOW, end_name=WRIST, forced_length=arm.forearm_length)
+    joint_3d_positions = joint_estimated_poses.copy()
     if viz is not None:
         for joint_name, joint_pos in arm_estim.items():
             viz.addBox(joint_name, [.05, .05, .05], COLORS_LIST[joint_name])
@@ -230,15 +232,15 @@ def update_arm_model(
         progress_bar=progress_bar
     )
     global_params["q"] = q
-    return q
+    return q, joint_3d_positions, original_joint_3d_positions
 
 
 def coarse_inverse_kinematics_initialization(
     estimated_poses: List,
     arm_side: str = RIGHT,
     visualize_ik_iterations: bool = True
-) -> Tuple[List[np.ndarray], dict]:
-    """_summary_
+) -> Tuple[List[dict], dict]:
+    """Coarse initialization using inverse kinematics (fit shoulder and elbow 3D positions)
 
     Args:
         estimated_poses (List): List of estimated poses from mediapipe
@@ -255,13 +257,30 @@ def coarse_inverse_kinematics_initialization(
     # @TODO: go backwards to refine
     global_params = {}
     q_list = []
+    joint_3d_positions_list = []
+    original_joint_3d_positions_list = []
     build_arm_model(global_params=global_params, headless=visualize_ik_iterations)
     for frame_idx in tqdm(range(len(estimated_poses))):
         global_params["frame_idx"] = frame_idx
-        q_estimation = update_arm_model(estimated_poses, global_params=global_params, arm_side=arm_side,
-                                        fit_elbow=True, fit_wrist=True, scale_constant=1., progress_bar=False)
+        q_estimation, joint_3d_positions, original_joint_3d_positions = update_arm_model(
+            estimated_poses, global_params=global_params, arm_side=arm_side,
+            fit_elbow=True, fit_wrist=True, scale_constant=1., progress_bar=False)
         q_list.append(q_estimation)
-    return q_list, global_params
+        joint_3d_positions_list.append(joint_3d_positions)
+        original_joint_3d_positions_list.append(original_joint_3d_positions)
+    config = {
+        "q": q_list,
+        "3dpoints": {
+            "list": joint_3d_positions_list,
+            SHOULDER: [dic[SHOULDER] for dic in joint_3d_positions_list],
+            ELBOW: [dic[ELBOW] for dic in joint_3d_positions_list],
+            WRIST: [dic[WRIST] for dic in joint_3d_positions_list],
+        },
+        "3dpoints_original": {
+            "list": original_joint_3d_positions_list,
+        }
+    }
+    return config, global_params
 
 
 def coarse_inverse_kinematics_visualization(q_list: List[np.ndarray], global_params: dict) -> None:
