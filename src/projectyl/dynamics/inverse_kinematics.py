@@ -4,10 +4,10 @@ import numpy as np
 from time import sleep
 from projectyl.dynamics.armmodel import ArmRobot
 from projectyl.dynamics.meshcat_viewer_wrapper import MeshcatVisualizer
-from projectyl.utils.arm import retrieve_arm_estimation
+from projectyl.utils.arm import retrieve_arm_estimation, interactive_replay_sequence
 from typing import Union, Optional, Tuple, List
 import logging
-from projectyl.utils.properties import SHOULDER, ELBOW, WRIST, LEFT
+from projectyl.utils.properties import SHOULDER, ELBOW, WRIST, LEFT, RIGHT
 
 
 def extract_dim(vec: np.ndarray, start: int, end: int) -> np.ndarray:
@@ -85,15 +85,17 @@ def solve_tasks(
     Niter: int = 500,
     viz=None,
     q_init=None,
-    arm=None
+    arm=None,
+    progress_bar=True
 ) -> np.ndarray:
     if q_init is None:
-        logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Random init")
+        logging.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Random init")
         q_init = pin.randomConfiguration(arm.model)
     q = q_init.copy()
-    viz.display(q_init)
+    if viz is not None:
+        viz.display(q_init)
 
-    for it in tqdm(range(Niter), desc="IK"):  # Integrate over 2 second of rob life
+    for it in (range(Niter) if not progress_bar else tqdm(range(Niter), desc="IK")):  # Integrate over 2 second of rob life
         pin.framesForwardKinematics(arm.model, arm.data, q)  # update Forward kinematic
         vq, p = None, None
 
@@ -104,10 +106,12 @@ def solve_tasks(
                 vq_prev=vq, projector=p
             )
         q = pin.integrate(arm.model, q, vq*DT)
-        if it % 50 == 0:
-            viz.display(q)
-            sleep(1.E-3)
-    viz.display(q)
+        if viz is not None:
+            if it % 50 == 0:
+                viz.display(q)
+                sleep(1.E-3)
+    if viz is not None:
+        viz.display(q)
     return q
 
 
@@ -149,7 +153,8 @@ def permute_estimated_poses(joint_pos):
 
 def update_arm_model(
     body_pose_full, global_params={}, fit_wrist=True,
-    fit_elbow=False, scale_constant=1., arm_side=LEFT
+    fit_elbow=False, scale_constant=1., arm_side=LEFT,
+    progress_bar=False
 ):
     # shoulder, elbow, wrist
     COLORS_LIST = {
@@ -201,10 +206,10 @@ def update_arm_model(
             assert np.isclose(length, forced_length), f"Length is {length} instead of {forced_length}"
     standardize_length(joint_estimated_poses, start_name=SHOULDER, end_name=ELBOW, forced_length=arm.upper_arm_length)
     standardize_length(joint_estimated_poses, start_name=ELBOW, end_name=WRIST, forced_length=arm.forearm_length)
-
-    for joint_name, joint_pos in arm_estim.items():
-        viz.addBox(joint_name, [.05, .05, .05], COLORS_LIST[joint_name])
-        viz.applyConfiguration(joint_name, joint_estimated_poses[joint_name])
+    if viz is not None:
+        for joint_name, joint_pos in arm_estim.items():
+            viz.addBox(joint_name, [.05, .05, .05], COLORS_LIST[joint_name])
+            viz.applyConfiguration(joint_name, joint_estimated_poses[joint_name])
 
     task_list = []
     if fit_elbow:
@@ -221,12 +226,44 @@ def update_arm_model(
         task_list,
         viz=viz,
         q_init=q,
-        arm=arm
+        arm=arm,
+        progress_bar=progress_bar
     )
     global_params["q"] = q
+    return q
 
 
-def coarse_inverse_kinematics_initialization(estimated_poses, headless: bool = True):
+def coarse_inverse_kinematics_initialization(
+    estimated_poses: List,
+    arm_side: str = RIGHT,
+    visualize_ik_iterations: bool = True
+) -> Tuple[List[np.ndarray], dict]:
+    """_summary_
+
+    Args:
+        estimated_poses (List): List of estimated poses from mediapipe
+        arm_side (str, optional): right or left. Defaults to RIGHT.
+        visualize_ik_iterations (bool, optional): Not recommended. View the IK iterations while fitting
+        Defaults to True.
+
+    Returns:
+        Tuple[List[np.ndarray], dict]: q_list, global_params
+        list of states, and global params in case you need to retieve
+        the arm model or visualization afterwards
+    """
+
     global_params = {}
-    build_arm_model(global_params=global_params, headless=headless)
-    # update_arm_model_filter(estimated_poses, global_params=global_params)
+    q_list = []
+    build_arm_model(global_params=global_params, headless=visualize_ik_iterations)
+    for frame_idx in tqdm(range(len(estimated_poses))):
+        global_params["frame_idx"] = frame_idx
+        q_estimation = update_arm_model(estimated_poses, global_params=global_params, arm_side=arm_side,
+                                        fit_elbow=True, fit_wrist=True, scale_constant=1., progress_bar=False)
+        q_list.append(q_estimation)
+    return q_list, global_params
+
+
+def coarse_inverse_kinematics_visualization(q_list: List[np.ndarray], global_params: dict):
+    build_arm_model(global_params=global_params, headless=False)
+    interactive_replay_sequence(q_list, global_params["viz"])
+    return global_params
