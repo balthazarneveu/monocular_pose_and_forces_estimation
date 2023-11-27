@@ -102,7 +102,7 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
                         help="Enable multiprocessing - Warning with GPU - use -j2")
     parser.add_argument("--override", action="store_true",
                         help="overwrite processed results")
-    parser.add_argument("-fast", "--disable-preload-ram", action="store_true",
+    parser.add_argument("-tryfast", "--disable-preload-ram", action="store_true",
                         help="Preload video in RAM")
     parser.add_argument_group("algorithm")
     parser.add_argument("-A", "--algo", nargs="+",
