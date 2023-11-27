@@ -251,7 +251,8 @@ def coarse_inverse_kinematics_initialization(
         list of states, and global params in case you need to retieve
         the arm model or visualization afterwards
     """
-
+    # @TODO: store the 3D positions
+    # @TODO: go backwards to refine
     global_params = {}
     q_list = []
     build_arm_model(global_params=global_params, headless=visualize_ik_iterations)
@@ -263,7 +264,14 @@ def coarse_inverse_kinematics_initialization(
     return q_list, global_params
 
 
-def coarse_inverse_kinematics_visualization(q_list: List[np.ndarray], global_params: dict):
+def coarse_inverse_kinematics_visualization(q_list: List[np.ndarray], global_params: dict) -> None:
+    """Visualize step by step the IK solution
+
+    Args:
+        q_list (List[np.ndarray]): List of q states
+        global_params (dict): dict containing viz and arm in case these already exist
+
+    """
     build_arm_model(global_params=global_params, headless=False)
     interactive_replay_sequence(q_list, global_params["viz"])
     return global_params
