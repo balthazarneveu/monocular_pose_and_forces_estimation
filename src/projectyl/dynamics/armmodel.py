@@ -31,15 +31,14 @@ MAX_MVT_BOX = 1.0
 
 # Arm definition
 class ArmRobot(RobotWrapper):
-
     def __init__(
-            self,
-            upper_arm_length: float,
-            forearm_length: float,
-            headless: bool = False,
-            verbose: bool = False,
-            free_elbow: bool = False,
-        ):
+        self,
+        upper_arm_length: float,
+        forearm_length: float,
+        headless: bool = False,
+        verbose: bool = False,
+        free_elbow: bool = False,
+    ):
         self.upper_arm_length = upper_arm_length
         self.forearm_length = forearm_length
         self.free_elbow = free_elbow
@@ -53,7 +52,9 @@ class ArmRobot(RobotWrapper):
         visual_model = None
         if not headless:
             visual_model = self._build_visual_model(upper_arm_length, forearm_length, model)
-
+        self.shoulder_frame_id = model.getFrameId(SHOULDER)
+        self.elbow_frame_id = model.getFrameId(ELBOW)
+        self.wrist_frame_id = model.getFrameId(WRIST)
         super().__init__(model, collision_model, visual_model, verbose)
 
     def _build_model(self, upper_arm_length: float, forearm_length: float, free_elbow):
@@ -91,7 +92,7 @@ class ArmRobot(RobotWrapper):
 
         # add shoulder frame
         model.addJointFrame(shoulder_joint_id)
-        
+
         # Add elbow joint (revolute) to model
         if free_elbow:
             elbow_joint = JointModelSpherical()
@@ -132,7 +133,7 @@ class ArmRobot(RobotWrapper):
 
         # add elbow frame
         model.addJointFrame(elbow_joint_id)
-        
+
         # Add wrist frame at the end of the forearm
         wrist_frame = Frame(
             WRIST,
