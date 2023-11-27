@@ -199,13 +199,14 @@ def update_arm_model(
         viz.applyConfiguration(joint_name, joint_estimated_poses[joint_name])
 
     task_list = []
+    if fit_elbow:
+        task_list.append(
+            # (arm.model.getFrameId(ELBOW), joint_estimated_poses[ELBOW], (0, 2) if fit_wrist else (0, 3)),
+            (arm.model.getFrameId(ELBOW), joint_estimated_poses[ELBOW], (0, 3) if fit_wrist else (0, 3)),
+        )
     if fit_wrist:
         task_list.append(
             (arm.model.getFrameId(WRIST), joint_estimated_poses[WRIST], (0, 3)),
-        )
-    if fit_elbow:
-        task_list.append(
-            (arm.model.getFrameId(ELBOW), joint_estimated_poses[ELBOW], (1, 2) if fit_wrist else (0, 3)),
         )
     q = global_params.get("q", None)
     q = solve_tasks(
