@@ -38,19 +38,24 @@ def replay_whole_sequence(q_list, viz):
 
 @interactive(
     frame_idx=(0., [0., 1.], "frame_idx"),
+    mode=(0, [0, 10], "index [0 for estimation -1 for GT]"),
 )
-def interactive_replay(q_list, viz, frame_idx=0., global_params={}):
+def interactive_replay(q_dict, viz, frame_idx=0., mode=0, global_params={}):
+    q_keys = list(q_dict.keys())
+    q_key = q_keys[min(mode, len(q_keys)-1)]
+    q_list = q_dict[q_key]
+    logging.info(f"Replay mode {q_key} at index {frame_idx}")
     q = q_list[int(frame_idx*(len(q_list)-1))]
     viz.display(q)
-    sleep(1/30.)
+    # sleep(1/30.)
 
 
-def replay_sequence(q_list, viz):
-    interactive_replay(q_list, viz)
+def replay_sequence(q_dict, viz):
+    interactive_replay(q_dict, viz)
 
 
-def interactive_replay_sequence(q_list, viz):
-    interactive_pipeline(safe_input_buffer_deepcopy=False)(replay_sequence)(q_list, viz)
+def interactive_replay_sequence(q_dict, viz):
+    interactive_pipeline(safe_input_buffer_deepcopy=False)(replay_sequence)(q_dict, viz)
 
 
 def plot_optimization_curves(states_to_plot: list, mode: str = "qvt", title: str = "Optimization problem"):
@@ -68,6 +73,7 @@ def plot_optimization_curves(states_to_plot: list, mode: str = "qvt", title: str
                 ax.plot(state[:, 0+dim], style+frozen_color_code[dim],
                         label=f"q shoulder {label} {dim}")  # skip index 3 (quaternion normalization)
             ax.plot(state[:, 4], style+frozen_color_code[3], label=f"q elbow {label}")
+            ax.set_title("Q state [rad] (?)")
             graph_id += 1
         if "v" in mode:
             ax = axs[graph_id]
@@ -87,11 +93,9 @@ def plot_optimization_curves(states_to_plot: list, mode: str = "qvt", title: str
     for i in range(len(axs)):
         axs[i].legend()
         axs[i].grid()
+        axs[i].set_xlabel("Time index")
     plt.suptitle(title)
     plt.show()
-
-
-# plot_optimization_curves([(gt_sol, "[gt]", "--"),])
 
 
 def plot_ik_states(conf_list):

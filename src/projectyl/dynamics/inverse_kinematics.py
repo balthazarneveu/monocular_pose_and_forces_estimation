@@ -292,5 +292,8 @@ def coarse_inverse_kinematics_visualization(q_list: List[np.ndarray], global_par
 
     """
     build_arm_model(global_params=global_params, headless=False)
-    interactive_replay_sequence(q_list, global_params["viz"])
+    interactive_replay_sequence(
+        {"prediction": q_list},
+        global_params["viz"]
+    )
     return global_params
