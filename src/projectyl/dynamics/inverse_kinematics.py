@@ -177,10 +177,18 @@ def update_arm_model(
         joint_estimated_poses[joint_name] = joint_estimated_pose
 
     def standardize_length(
-        joint_estimated_poses, forced_length,
-        start_name=SHOULDER, end_name=ELBOW,
+        joint_estimated_poses: dict, forced_length: float,
+        start_name: str = SHOULDER, end_name: str = ELBOW,
         sanity_check=False
-    ):
+    ) -> None:
+        """Force length between 3D points
+        - move end
+        - keep start
+        - distance = ||start-end||
+
+        This trick allows respecting the arm possible workspace.
+        And therefor grants correct IK solution.
+        """
         start_pos = joint_estimated_poses[start_name].translation
         end_pos = joint_estimated_poses[end_name].translation
         length = np.sqrt(((end_pos - start_pos)**2).sum())

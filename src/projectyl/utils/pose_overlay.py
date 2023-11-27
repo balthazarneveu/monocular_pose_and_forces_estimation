@@ -33,10 +33,17 @@ def overlay_pose(frame, pose_annotations, global_params={}, pose_overlay=True, j
 
 @interactive(
     update_arm=(True, "update_arm"),
-    fit_mode=(WRIST, [ELBOW, WRIST, "elbow+wrist"], "fit_mode"),
-    scale_constant=(1., [0.1, 10.], "scale_constant"),
+    fit_mode=(ELBOW+"+"+WRIST, [ELBOW, WRIST, ELBOW+"+"+WRIST], "fit_mode"),
+    # scale_constant=(1., [0.1, 10.], "scale_constant"),
 )
-def update_arm_model_filter(body_pose_full, update_arm=True, fit_mode=WRIST, scale_constant=5., global_params={}):
+def update_arm_model_filter(
+    body_pose_full,
+    update_arm=True,
+    fit_mode=WRIST,
+    scale_constant=1.,
+    global_params={}
+):
+
     if update_arm:
         build_arm_model(global_params=global_params)
         update_arm_model(body_pose_full, global_params=global_params,
@@ -87,16 +94,15 @@ def get_camera_config(w, h, viz=None):
     return k, extrinsic_matrix
 
 
-@interactive(
-    fpix=(1000., [10, 10000.], "fpix"),
-)
-def forward_camera_projection(img_ref, fpix=1000., global_params={}):
+def forward_camera_projection(img_ref, global_params={}):
     build_arm_model(global_params=global_params)
     viz = global_params.get("viz", None)
     arm = global_params["arm"]
     q = global_params.get("q", arm.q0)
     h, w = img_ref.shape[:2]
-    k, extrinsic_matrix = get_camera_config(w, h, viz=viz)
+    k, extrinsic_matrix = global_params.get("intrinsic_matrix", None), global_params.get("extrinsic_matrix", None)
+    if k is None or extrinsic_matrix is None:
+        k, extrinsic_matrix = get_camera_config(w, h, viz=viz)
     p2d_list = {}
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
     for frame_idx, frame in enumerate([SHOULDER, ELBOW, WRIST]):
@@ -138,7 +144,8 @@ def forward_camera_projection(img_ref, fpix=1000., global_params={}):
 def get_camera_config_filter(img_ref, global_params={}):
     h, w = img_ref.shape[:2]
     k, extrinsic_matrix = get_camera_config(w, h)
-    global_params["intrisic_matrix"] = k
+    global_params["intrinsic_matrix"] = k
+    global_params["extrinsic_matrix"] = extrinsic_matrix
     pass
 
 
