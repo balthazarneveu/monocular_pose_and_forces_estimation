@@ -14,6 +14,8 @@ Review of the paper Estimating 3D Motion and Forces of Person-Object Interaction
 
 
 
+-----
+
 ## Setup
 #### Setup projectyl
 ```bash
@@ -39,8 +41,37 @@ python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __out -A pose ik --
   - `-A pose` will run mediapipe pose estimator. (run once, store the results, next time reload)
 > `--override` can be used to recompute images and overwrite previous results.
 
+------
 
 ## Modelization
+
+| Pose estimation | Arm model|
+|:------:|:-----:|
+|![](/report/figures/pose_estimation_gui_2.png)| ![](/report/figures/live_arm_vertical.png)
+| :statue_of_liberty:  pose estimated from video | :wrench: Synchronized "Digital twin" | 
+
+### Pose estimation
+Using [Google Mediapipe](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), we're able to retrieve
+- 2D projected points
+- 3D coarse estimation
+
+
+### Coarse initialization of dynamic system inverse kinematics
+Based on a frame by frame estimation (initalized from previous estimation), we're able to retrieve a decent state arm.
+
+:warning: As mediapipe does not provide 3D coordinates that grant fixed lenght arms, the system can't always be resolved correctly.
+
+:bulb: An idea is to forced the initiate the inverse kinematics by forcing standardized length of the arms.
+
+![](/report/figures/estimated_poses_from_ik.png)
+
+
+### Next step
+Estimate inverse dynamics of the system and regularize.
+- velocities
+- torque
+
+
 ### Projective camera geometry
 - Pinhole model is used
 
