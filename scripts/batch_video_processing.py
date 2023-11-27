@@ -10,11 +10,14 @@ from projectyl.utils.cli_parser_tool import add_video_parser_args
 from projectyl.utils.interactive import live_view
 from projectyl.video.props import THUMBS, PATH_LIST
 from projectyl.utils.properties import LEFT, RIGHT
+from projectyl.utils.arm import plot_ik_states
 import logging
 from projectyl.utils.io import Dump
 from projectyl.algo.pose_estimation import get_pose, get_detector
 from projectyl.utils.pose_overlay import interactive_visualize_pose
-from projectyl.dynamics.inverse_kinematics import coarse_inverse_kinematics_initialization, coarse_inverse_kinematics_visualization
+from projectyl.dynamics.inverse_kinematics import (
+    coarse_inverse_kinematics_initialization, coarse_inverse_kinematics_visualization
+)
 
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
@@ -82,12 +85,13 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         ik_path = output/"coarse_ik.pkl"
         global_params = {}
         if ik_path.exists() and skip_existing:
-            q_list = Dump.load_pickle(ik_path)
+            conf_list = Dump.load_pickle(ik_path)
         else:
-            q_list, global_params = coarse_inverse_kinematics_initialization(pose_annotations)
-            Dump.save_pickle(q_list, ik_path)
+            conf_list, global_params = coarse_inverse_kinematics_initialization(pose_annotations)
+            Dump.save_pickle(conf_list, ik_path)
         if not args.headless:
-            coarse_inverse_kinematics_visualization(q_list, global_params)
+            coarse_inverse_kinematics_visualization(conf_list["q"], global_params)
+        plot_ik_states(conf_list)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
