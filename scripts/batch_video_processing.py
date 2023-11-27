@@ -8,12 +8,12 @@ import sys
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args
 from projectyl.utils.interactive import live_view
-from projectyl.video.props import FRAMES, THUMBS, FRAME_IDX, TS, FOLDER, PATH_LIST, SIZE
+from projectyl.video.props import THUMBS, PATH_LIST
 import logging
 from projectyl.utils.io import Dump
 from projectyl.algo.pose_estimation import get_pose, get_detector
 from projectyl.utils.pose_overlay import interactive_visualize_pose
-
+from projectyl.dynamics.inverse_kinematics import coarse_inverse_kinematics_initialization
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
@@ -47,7 +47,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     im_list = config[THUMBS][PATH_LIST]
     if "view" in args.algo:
         live_view(im_list, trimming=False, preload_ram=preload_ram)
-    if "pose" in args.algo:
+    if "pose" in args.algo or "ik" in args.algo:
         pose_dir = output/"pose"
         pose_dir.mkdir(parents=True, exist_ok=True)
         detector = None
@@ -74,7 +74,10 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
                 Dump.save_pickle(dic_annot, pose_path)
             pose_annotations.append(dic_annot)
             pose_annotation_img_list.append(pose_annotation_img)
+    if "pose" in args.algo:
         interactive_visualize_pose(im_list, pose_annotations)
+    if "ik" in args.algo:
+        coarse_inverse_kinematics_initialization(pose_annotations)
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
@@ -89,7 +92,7 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
                         help="Preload video in RAM")
     parser.add_argument_group("algorithm")
     parser.add_argument("-A", "--algo", nargs="+",
-                        choices=["pose", "view"], default=[])
+                        choices=["pose", "view", "ik"], default=[])
     return batch.parse_args(parser)
 
 
