@@ -9,6 +9,28 @@ import pinocchio as pin
 # arm_robot.model.createData()
 
 
+def rk2_step(arm_robot, q, vq, tauq, dt):
+    # First step
+    M = pin.crba(arm_robot.model, arm_robot.data, q)
+    b = pin.nle(arm_robot.model, arm_robot.data, q, vq)
+    aq1 = np.linalg.solve(M, tauq - b)
+
+    # Intermediate values
+    q_mid = pin.integrate(arm_robot.model, q, vq * dt / 2)
+    vq_mid = vq + aq1 * dt / 2
+
+    # Second step
+    M_mid = pin.crba(arm_robot.model, arm_robot.data, q_mid)
+    b_mid = pin.nle(arm_robot.model, arm_robot.data, q_mid, vq_mid)
+    aq2 = np.linalg.solve(M_mid, tauq - b_mid)
+
+    # Update state
+    q_new = pin.integrate(arm_robot.model, q, vq_mid * dt)
+    vq_new = vq + aq2 * dt
+
+    return q_new, vq_new
+
+
 def build_simulation(arm_robot: ArmRobot, DT=1e-2, T=30):
     q = arm_robot.q0.copy()
     q[-1] = 0.5
@@ -54,8 +76,9 @@ def build_simulation(arm_robot: ArmRobot, DT=1e-2, T=30):
         rec_ground_truth_shoulder_p.append(shoulder_p.copy())
         rec_ground_truth_elbow_p.append(elbow_p.copy())
         rec_ground_truth_wrist_p.append(wrist_p.copy())
-        vq += aq * DT
-        q = pin.integrate(arm_robot.model, q, vq * DT)
+
+        q, vq = rk2_step(arm_robot, q, vq, tauq, DT)
+        
         tauq *= 0.1
     return (rec_ground_truth_q, rec_ground_truth_vq, rec_ground_truth_aq, rec_ground_truth_tauq,
             rec_ground_truth_shoulder_p, rec_ground_truth_elbow_p, rec_ground_truth_wrist_p)
