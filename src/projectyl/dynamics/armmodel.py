@@ -1,6 +1,6 @@
 import numpy as np
 
-from pinocchio import RobotWrapper, SE3, Model, Inertia, JointModelFreeFlyer, JointModelSpherical, JointModelRY, GeometryModel, GeometryObject, Frame, FrameType
+from pinocchio import RobotWrapper, SE3, Model, Inertia, JointModelSpherical, JointModelRUBY, GeometryModel, GeometryObject, Frame, FrameType
 from pinocchio.utils import rotate
 from hppfcl import Cylinder, Sphere
 from projectyl.utils.properties import SHOULDER, ELBOW, WRIST
@@ -37,13 +37,12 @@ class ArmRobot(RobotWrapper):
         forearm_length: float,
         headless: bool = False,
         verbose: bool = False,
-        free_elbow: bool = False,
     ):
         self.upper_arm_length = upper_arm_length
         self.forearm_length = forearm_length
-        self.free_elbow = free_elbow
+
         # Initialize the arm model
-        model = self._build_model(upper_arm_length, forearm_length, free_elbow)
+        model = self._build_model(upper_arm_length, forearm_length)
 
         # Initialize the arm collision model
         collision_model = GeometryModel()  # Useless apriori, but cannot be None (else error with viz)
@@ -57,7 +56,7 @@ class ArmRobot(RobotWrapper):
         self.wrist_frame_id = model.getFrameId(WRIST)
         super().__init__(model, collision_model, visual_model, verbose)
 
-    def _build_model(self, upper_arm_length: float, forearm_length: float, free_elbow):
+    def _build_model(self, upper_arm_length: float, forearm_length: float):
         model = Model()
 
         # Inertia for the arm part
@@ -93,33 +92,17 @@ class ArmRobot(RobotWrapper):
         # add shoulder frame
         model.addJointFrame(shoulder_joint_id)
 
-        # Add elbow joint (revolute) to model
-        if free_elbow:
-            elbow_joint = JointModelSpherical()
-            elbow_joint_id = model.addJoint(
-                shoulder_joint_id,
-                elbow_joint,
-                SE3(
-                    np.eye(3),
-                    np.array([0.0, 0.0, upper_arm_length]),
-                ),
-                ELBOW,
-            )
-        else:
-            elbow_joint = JointModelRY()
-            elbow_joint_id = model.addJoint(
-                shoulder_joint_id,
-                elbow_joint,
-                SE3(
-                    np.eye(3),
-                    np.array([0.0, 0.0, upper_arm_length]),
-                ),
-                ELBOW,
-                np.full(1, MAX_NP_FLOAT64),
-                np.full(1, MAX_NP_FLOAT64),
-                np.full(1, ELBOW_MIN_ANGLE),
-                np.full(1, ELBOW_MAX_ANGLE),
-            )
+        
+        elbow_joint = JointModelRUBY()
+        elbow_joint_id = model.addJoint(
+            shoulder_joint_id,
+            elbow_joint,
+            SE3(
+                np.eye(3),
+                np.array([0.0, 0.0, upper_arm_length]),
+            ),
+            ELBOW,
+        )
 
         # Add inertia to the elbow joint
         model.appendBodyToJoint(

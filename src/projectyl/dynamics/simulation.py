@@ -33,7 +33,7 @@ def rk2_step(arm_robot, q, vq, tauq, dt):
 
 def build_simulation(arm_robot: ArmRobot, DT=1e-2, T=30):
     q = arm_robot.q0.copy()
-    q[-1] = 0.5
+    q[4:] = np.sqrt(2) / 2
     vq = np.zeros(arm_robot.model.nv)
     aq = np.zeros(arm_robot.model.nv)
     tauq = 0 * np.random.rand(arm_robot.model.nv)
