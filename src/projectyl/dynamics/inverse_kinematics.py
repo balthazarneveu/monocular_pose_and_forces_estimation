@@ -134,10 +134,10 @@ def forward_kinematics(
     return o_Mtool, o_Jtool
 
 
-def build_arm_model(global_params: dict = {}, headless=False):
+def build_arm_model(global_params: dict = {}, headless=False, free_elbow=False):
     arm = global_params.get("arm", None)
     if arm is None:
-        arm = ArmRobot(upper_arm_length=0.23, forearm_length=0.27)
+        arm = ArmRobot(upper_arm_length=0.23, forearm_length=0.27, headless=headless, free_elbow=free_elbow)
         global_params["arm"] = arm
     viz = global_params.get("viz", None)
     if viz is None and not headless:
