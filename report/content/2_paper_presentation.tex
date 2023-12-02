@@ -39,7 +39,7 @@ is not clearly stated in their method overview.
 \label{subsec:reconstruct_original}
 
 The optimization framework presented by \citet{li2019estimating} is designed to estimate the 3D trajectories of both the human and the object, 
-as well as the exerted contact forces, by solving the following trajectory optimization problem: 
+as well as the applied contact forces, by solving the following trajectory optimization problem: 
 
 \begin{equation*}
     \begin{aligned}
@@ -68,7 +68,7 @@ are not directly used as variables. Instead, velocities are approximated using t
         their re-projections from the 3D estimates, using the camera projection matrix \(P_{\text{cam}}\). Outlier influence is mitigated 
         by employing the Huber loss function \(\rho\).
     \item 
-        \(l_{3D}\): This loss ensuring that the estimated 3D positions adhere closely to the HMR references.
+        \(l_{3D}\): This loss ensures that the estimated 3D positions adhere closely to the HMR 3D references.
     \item 
         \(l_{\text{pose}}^h\): A likelihood term for the human pose, encouraging plausible human poses through a Gaussian Mixture Model 
         trained on motion capture data.
@@ -82,7 +82,7 @@ are not directly used as variables. Instead, velocities are approximated using t
         study.
 \end{itemize}
 
-The loss function for the object, \(l^o\), is constructed similarly, omitting the 3D consistency and pose likelihood terms.
+The loss function for the object, \(l^o\), is constructed similarly, omitting the 3D consistency, torque smoothness and pose likelihood terms.
 
 \noindent\textbf{Constraints.} The optimization process is subject to constraints that govern the full-body dynamics of the human and object 
 interaction. These dynamics are encapsulated by the Lagrange dynamics equation:
