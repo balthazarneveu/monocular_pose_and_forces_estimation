@@ -6,6 +6,8 @@ from projectyl.utils.io import Image, Dump
 from matplotlib import pyplot as plt
 import logging
 from tqdm import tqdm
+from projectyl.utils.camera_projection import get_focal_from_full_frame_equivalent, rescale_focal, get_intrinic_matrix
+from projectyl.video.props import INTRINSIC_MATRIX
 
 
 def getcorners(
@@ -25,7 +27,7 @@ def getcorners(
     if ret:
         corners = cv.cornerSubPix(gray, corners, (5, 5), (-1, -1), criteria)
     else:
-        logging.warning("Chessboard not found")
+        logging.debug("Chessboard not found")
     if ret:
         img_overlay = cv.drawChessboardCorners(
             img_overlay, checkerboardsize, corners*resize_factor, ret)
@@ -35,17 +37,27 @@ def getcorners(
     return ret, None if not ret else corners*resize_factor, img_overlay, gray.shape[::-1]
 
 
-def camera_calibration(img_list: List[Path], resize_factor=0.5, output_folder: Path = None, debug=True):
+def camera_calibration(
+    img_list: List[Path],
+    resize_factor=0.5,
+    output_folder: Path = None,
+    debug=True,
+    checkerboardsize: Tuple[int, int] = (10, 7),
+):
     if output_folder is not None:
         output_folder.mkdir(parents=True, exist_ok=True)
+    # Save calibration
+    cam_calib_path = output_folder/"camera_calibration.json"
+    if cam_calib_path.exists():
+        calib_dict = Dump.load_json(cam_calib_path)
+        logging.debug(f"Camera calibration found {calib_dict}")
+        return np.array(calib_dict[INTRINSIC_MATRIX])
+    corner_list = []
     for idx, img_path in tqdm(enumerate(img_list), desc="Camera calibration", total=len(img_list)):
         img_path = Path(img_path)
-        corner_path = (output_folder / (img_path.name + "_corners")).with_suffix(".yaml")
-        corner_list = []
+        corner_path = (output_folder / (img_path.name + "_corners")).with_suffix(".json")
         if corner_path.exists():
-            corners = Dump.load_yaml(corner_path)
-            logging.debug(f"Skipping {img_path} - corners already computed")
-            continue
+            corners = Dump.load_json(corner_path)
         else:
             img = Image.load(img_path)
             h, w = img.shape[:2]
@@ -53,12 +65,33 @@ def camera_calibration(img_list: List[Path], resize_factor=0.5, output_folder: P
                 ds_size = None
             else:
                 ds_size = (int(w*resize_factor), int(h*resize_factor))
-            ret, corners, img_overlay, checkerboard_shape = getcorners(img, resize=ds_size, show=False)
+            ret, corners, img_overlay, checkerboard_shape = getcorners(
+                img, resize=ds_size, show=False, checkerboardsize=checkerboardsize)
+            if not ret:
+                corners = []
             if debug:
                 if img_overlay is not None:
                     Image.write(output_folder/img_path.name, img_overlay)
-            if ret:
-                Dump.save_yaml(corners.tolist(), corner_path)
+            Dump.save_json([] if not ret else corners.tolist(), corner_path)
         corner_list.append(corners)
-        # if idx > 20:
-        #     break
+    corner_list_non_empty = [np.array(c).reshape(-1, 1, 2).astype(np.float32) for c in corner_list if len(c) > 0]
+    corner_list_non_empty = corner_list_non_empty[::2]
+    img = Image.load(Path(img_list[0]))
+    h, w = img.shape[:2]
+    del img
+    objp = np.zeros((checkerboardsize[1]*checkerboardsize[0], 3), np.float32)
+    objp[:, :2] = np.mgrid[0:checkerboardsize[0], 0:checkerboardsize[1]].T.reshape(-1, 2)
+    objp = objp.astype(np.float32)
+    objpoints = []  # 3d point in real world space
+    for idx in range(len(corner_list_non_empty)):
+        objpoints.append(objp)
+    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, corner_list_non_empty, (w, h), None, None)
+    # Numerical sanity check
+    expected_focal = rescale_focal(
+        get_focal_from_full_frame_equivalent(),
+        w_resized=max(w, h)*1.3  # Video mode crops around 30% margin for stabilization
+    )
+    theoretical_intrinsic = get_intrinic_matrix((h, w), fpix=expected_focal)
+    print(f"{mtx}\n{theoretical_intrinsic}")
+    Dump.save_json({INTRINSIC_MATRIX: mtx.tolist()}, cam_calib_path)
+    return mtx
