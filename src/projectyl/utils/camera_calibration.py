@@ -14,6 +14,7 @@ def getcorners(
     img_in: np.array,
     checkerboardsize: Tuple[int, int] = (10, 7),
     resize: Optional[Tuple[int, int]] = None,
+    decimate_points: int = 5,
     show: bool = False
 ) -> Tuple[bool, np.array, np.array, Tuple[int, int]]:
     img_overlay = img_in.copy()
@@ -42,6 +43,7 @@ def camera_calibration(
     resize_factor=0.5,
     output_folder: Path = None,
     debug=True,
+    decimate: int = 5,
     checkerboardsize: Tuple[int, int] = (10, 7),
 ):
     if output_folder is not None:
@@ -75,7 +77,9 @@ def camera_calibration(
             Dump.save_json([] if not ret else corners.tolist(), corner_path)
         corner_list.append(corners)
     corner_list_non_empty = [np.array(c).reshape(-1, 1, 2).astype(np.float32) for c in corner_list if len(c) > 0]
-    corner_list_non_empty = corner_list_non_empty[::2]
+    # Remove a lot of corners to speed up calibration
+    if decimate > 1:
+        corner_list_non_empty = corner_list_non_empty[::decimate]
     img = Image.load(Path(img_list[0]))
     h, w = img.shape[:2]
     del img
@@ -83,7 +87,7 @@ def camera_calibration(
     objp[:, :2] = np.mgrid[0:checkerboardsize[0], 0:checkerboardsize[1]].T.reshape(-1, 2)
     objp = objp.astype(np.float32)
     objpoints = []  # 3d point in real world space
-    for idx in range(len(corner_list_non_empty)):
+    for _idx in range(len(corner_list_non_empty)):
         objpoints.append(objp)
     ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, corner_list_non_empty, (w, h), None, None)
     # Numerical sanity check
