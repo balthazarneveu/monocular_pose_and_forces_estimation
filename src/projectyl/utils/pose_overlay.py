@@ -1,4 +1,5 @@
 from projectyl.utils.properties import COLOR, POSITION, SIZE, ELBOW, SHOULDER, WRIST, CAMERA, LEFT, RIGHT
+from projectyl.video.props import INTRINSIC_MATRIX, EXTRINSIC_MATRIX
 from projectyl.utils.interactive import frame_selector, crop
 from interactive_pipe import interactive, interactive_pipeline
 from projectyl.algo.pose_estimation import draw_landmarks_on_image
@@ -100,7 +101,7 @@ def forward_camera_projection(img_ref, global_params={}):
     arm = global_params["arm"]
     q = global_params.get("q", arm.q0)
     h, w = img_ref.shape[:2]
-    k, extrinsic_matrix = global_params.get("intrinsic_matrix", None), global_params.get("extrinsic_matrix", None)
+    k, extrinsic_matrix = global_params.get(INTRINSIC_MATRIX, None), global_params.get(EXTRINSIC_MATRIX, None)
     if k is None or extrinsic_matrix is None:
         k, extrinsic_matrix = get_camera_config(w, h, viz=viz)
     p2d_list = {}
@@ -141,17 +142,18 @@ def forward_camera_projection(img_ref, global_params={}):
 
 
 @interactive()
-def get_camera_config_filter(img_ref, global_params={}):
+def get_camera_config_filter(img_ref, camera_config, global_params={}):
     h, w = img_ref.shape[:2]
-    k, extrinsic_matrix = get_camera_config(w, h)
-    global_params["intrinsic_matrix"] = k
-    global_params["extrinsic_matrix"] = extrinsic_matrix
+    k_default, extrinsic_matrix = get_camera_config(w, h)
+    k = camera_config.get(INTRINSIC_MATRIX, k_default) if camera_config is not None else k_default
+    global_params[INTRINSIC_MATRIX] = k
+    global_params[EXTRINSIC_MATRIX] = extrinsic_matrix
     pass
 
 
-def visualize_pose(sequence, pose_annotations):
+def visualize_pose(sequence, pose_annotations, camera_config):
     frame = frame_selector(sequence)
-    get_camera_config_filter(frame)
+    get_camera_config_filter(frame, camera_config)
     frame_overlay = overlay_pose(frame, pose_annotations)
     update_arm_model_filter(pose_annotations)
     reproj = forward_camera_projection(frame_overlay)
@@ -159,6 +161,6 @@ def visualize_pose(sequence, pose_annotations):
     return cropped, reproj
 
 
-def interactive_visualize_pose(sequence: Union[Path, List[np.ndarray]], pose_annotations):
+def interactive_visualize_pose(sequence: Union[Path, List[np.ndarray]], pose_annotations, camera_config={}):
     int_viz = interactive_pipeline(gui="auto", cache=True)(visualize_pose)
-    int_viz(sequence, pose_annotations)
+    int_viz(sequence, pose_annotations, camera_config)
