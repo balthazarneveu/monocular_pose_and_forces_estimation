@@ -1,2 +1,29 @@
 \section{Reimplementation Strategy}
 \label{sec:remplementation}
+
+The code accompanying the original paper  is poorly written, poorly documented, and is formed of several complex and independant blocks. 
+To effectively explore the core contributions of the paper, we decided to reimplement it with a more focused scope.
+
+In our approach, we concentrated on reconstructing arm motion from video data, a simplification that allowed us to tackle the fundamental 
+aspects of the methodology without the computational overhead of full-body modeling.
+
+\subsection{Vision Pipeline}
+\label{subsec:vision_pipeline}
+
+For 2D and 3D human pose estimation, we utilized the MediaPipe framework~\cite{lugaresi2019mediapipe}, which offers a more modern alternative 
+to OpenPose. MediaPipe simplifies the vision pipeline by also replacing HMR in our usecase. An illustration of MediaPipe's inference results 
+can be seen in~\cref{fig:mediapipe}.
+
+To recover the 2D and 3D human pose, we relied on the MediaPipe framework~\cite{lugaresi2019mediapipe}. It is more modern than OpenPose, and 
+simplify the vision pipeline, as we don't need HMR anymore. See a visualization of MediaPipe inference on~\cref{fig:mediapipe}.
+
+\begin{figure}
+    \centering
+    \fbox{\rule{0pt}{2in} \rule{0.9\linewidth}{0pt}}
+    \caption{Beautiful picture of Balthazar with MediaPipe.}
+    \label{fig:mediapipe}
+\end{figure}
+
+Although we experimented with the contact recognizer component, we did not use it into our pipeline since we did not model contact.
+
+\subsection{Inverse Kinematics}
