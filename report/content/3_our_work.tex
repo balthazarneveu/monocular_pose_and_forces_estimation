@@ -12,10 +12,7 @@ aspects of the methodology without the computational overhead of full-body model
 
 For 2D and 3D human pose estimation, we utilized the MediaPipe framework~\cite{lugaresi2019mediapipe}, which offers a more modern alternative 
 to OpenPose. MediaPipe simplifies the vision pipeline by also replacing HMR in our usecase. An illustration of MediaPipe's inference results 
-can be seen in~\cref{fig:mediapipe}.
-
-To recover the 2D and 3D human pose, we relied on the MediaPipe framework~\cite{lugaresi2019mediapipe}. It is more modern than OpenPose, and 
-simplify the vision pipeline, as we don't need HMR anymore. See a visualization of MediaPipe inference on~\cref{fig:mediapipe}.
+can be seen in~\cref{fig:mediapipe}. We then only used the arm joint 2D and 3D positions.
 
 \begin{figure}
     \centering
@@ -24,13 +21,12 @@ simplify the vision pipeline, as we don't need HMR anymore. See a visualization 
     \label{fig:mediapipe}
 \end{figure}
 
-We then only used the arm joint 2D and 3D positions.
-
 Although we experimented with the contact recognizer component, we did not use it into our pipeline since we do not model contact.
 
 \subsection{Arm Model}
 
-We modelized the arm in Pinocchio~\cite{carpentier2019pinocchio}.
+We modelized the arm in Pinocchio~\cite{carpentier2019pinocchio}. The shoulder is modelized as a spherical joint, and the elbow is modelized 
+as a revolute joint.
 
 \subsection{Inverse Kinematics}
 
