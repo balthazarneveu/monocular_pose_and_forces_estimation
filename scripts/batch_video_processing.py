@@ -54,16 +54,18 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         except Exception as e:
             raise NameError(f"Error loading config file {config_file} {e}")
     im_list = config[THUMBS][PATH_LIST]
+    camera_config = {}
     if "camera_calibration" in args.algo:
         camera_calibration_folder = output/"camera_calibration"
-        intrinsic_matrix = camera_calibration(im_list, output_folder=camera_calibration_folder)
-        config[INTRINSIC_MATRIX] = intrinsic_matrix
+        camera_calibration(im_list, output_folder=camera_calibration_folder)
         return  # Finish
     if "view" in args.algo:
         live_view(im_list, trimming=False, preload_ram=preload_ram)
     if args.camera_calibration:
         assert Path(args.camera_calibration).exists()
-        config[INTRINSIC_MATRIX] = np.array(Dump.load_json(Path(args.camera_calibration)))
+        calib_dict = Dump.load_json(Path(args.camera_calibration))
+        config[INTRINSIC_MATRIX] = np.array(calib_dict[INTRINSIC_MATRIX])
+        camera_config[INTRINSIC_MATRIX] = config[INTRINSIC_MATRIX]
     if "pose" in args.algo or "ik" in args.algo:
         pose_dir = output/"pose"
         pose_dir.mkdir(parents=True, exist_ok=True)
@@ -92,7 +94,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             pose_annotations.append(dic_annot)
             pose_annotation_img_list.append(pose_annotation_img)
     if "pose" in args.algo and not args.headless:
-        interactive_visualize_pose(im_list, pose_annotations)
+        interactive_visualize_pose(im_list, pose_annotations, camera_config=camera_config)
     if "ik" in args.algo:
         ik_path = output/"coarse_ik.pkl"
         global_params = {}

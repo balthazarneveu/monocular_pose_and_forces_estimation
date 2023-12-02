@@ -9,6 +9,7 @@ FRAMES, THUMBS = "frames", "thumbs"
 FPS = "fps"
 SIZE = "size"
 INTRINSIC_MATRIX = "intrinsic_matrix"
+EXTRINSIC_MATRIX = "extrinsic_matrix"
 sample_config_file = {
     "start_ratio": 0.1,
     "end_ratio": 0.8,
