@@ -24,6 +24,38 @@ from projectyl.video.props import INTRINSIC_MATRIX
 from projectyl import root_dir
 
 
+def get_trim_config(config_trim_file: Path, input: Path, preload_ram=False) -> dict:
+    if config_trim_file.exists():  # and skip_existing:
+        config_trim = Dump.load_yaml(config_trim_file)
+    else:
+        config_trim = live_view(input, trimming=True, preload_ram=preload_ram)
+        Dump.save_yaml(config_trim, config_trim_file)
+    return config_trim
+
+
+def get_sequence_config(input: Path, thumb_dir, config_trim: dict, config_file: Path,
+                        skip_existing: bool = True, resize: float = None) -> dict:
+    if config_file.exists() and skip_existing:
+        logging.warning(f"Results already exist - skip processing  {thumb_dir}")
+        config = Dump.load_yaml(config_file, safe_load=False)
+    else:
+        # Moviepy takes a while to load, load only on demand
+        from projectyl.video.decoder import save_video_frames
+        logging.warning(
+            f"Overwriting results - use --skip-existing to skip processing  {thumb_dir}")
+        thumb_dir.mkdir(parents=True, exist_ok=True)
+        trim = config_trim["start_ratio"], config_trim["end_ratio"]
+        config = save_video_frames(input, thumb_dir, trim=trim, resize=resize)
+        config["start_ratio"] = config_trim["start_ratio"]
+        config["end_ratio"] = config_trim["end_ratio"]
+        Dump.save_yaml(config, config_file)
+        try:
+            config = Dump.load_yaml(config_file, safe_load=False)
+        except Exception as e:
+            raise NameError(f"Error loading config file {config_file} {e}")
+    return config
+
+
 def get_pose_sequences(pose_dir: Path, config: dict, skip_existing: bool = True) -> list:
     """Retreive pose sequences from a list of images (contained in config).
     Save in pos_dir if not already saved.
@@ -64,34 +96,20 @@ def get_pose_sequences(pose_dir: Path, config: dict, skip_existing: bool = True)
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
-    config_file = output/"config.yaml"
-    config_trim_file = output/"trim_configuration.yaml"
     preload_ram = not args.disable_preload_ram
-    if config_trim_file.exists():  # and skip_existing:
-        config_trim = Dump.load_yaml(config_trim_file)
-    else:
-        config_trim = live_view(input, trimming=True, preload_ram=preload_ram)
-        Dump.save_yaml(config_trim, config_trim_file)
+
+    config_trim_file = output/"trim_configuration.yaml"
+    config_file = output/"config.yaml"
+    config_trim = get_trim_config(config_trim_file, input, preload_ram=preload_ram)
+
     thumb_dir = output/"thumbs"
-    if thumb_dir.exists() and skip_existing:
-        logging.warning(f"Results already exist - skip processing  {thumb_dir}")
-        config = Dump.load_yaml(config_file, safe_load=False)
-    else:
-        # Moviepy takes a while to load, load only on demand
-        from projectyl.video.decoder import save_video_frames
-        logging.warning(
-            f"Overwriting results - use --skip-existing to skip processing  {thumb_dir}")
-        thumb_dir.mkdir(parents=True, exist_ok=True)
-        trim = config_trim["start_ratio"], config_trim["end_ratio"]
-        config = save_video_frames(input, thumb_dir, trim=trim, resize=args.resize)
-        config["start_ratio"] = config_trim["start_ratio"]
-        config["end_ratio"] = config_trim["end_ratio"]
-        Dump.save_yaml(config, config_file)
-        try:
-            config = Dump.load_yaml(config_file, safe_load=False)
-        except Exception as e:
-            raise NameError(f"Error loading config file {config_file} {e}")
-    
+    config = get_sequence_config(
+        input, thumb_dir, config_trim,
+        config_file,
+        skip_existing=skip_existing,
+        resize=args.resize
+    )
+
     im_list = config[THUMBS][PATH_LIST]
     camera_config = {}
     if "camera_calibration" in args.algo:
