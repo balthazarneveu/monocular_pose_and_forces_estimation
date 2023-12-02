@@ -89,4 +89,8 @@ governing movement.
 
 Other constraints, such as those related to contact, are not the focus of our study and thus are not elaborated upon here.
 
-\noindent\textbf{Implementation.}
+\noindent\textbf{Implementation.} The authors approached the problem's solution by discretizing it and applying finite difference schemes 
+for derivatives, specifically \(\dot{y}_t = (y_t - y_{t - 1}) / \Delta t\). The computation of kinematic and dynamic quantities was facilitated 
+by the Pinocchio library~\cite{carpentier2019pinocchio}. Optimization was performed using the Levenberg-Marquardt algorithm, within the Ceres 
+Solver~\cite{Agarwal_Ceres_Solver_2022}. Due to the limitations on the constraint's type in such solvers, the constraints were incorporated as 
+penalty terms in the objective function.
