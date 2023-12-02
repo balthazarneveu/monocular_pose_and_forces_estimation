@@ -18,6 +18,7 @@ from projectyl.utils.pose_overlay import interactive_visualize_pose
 from projectyl.dynamics.inverse_kinematics import (
     coarse_inverse_kinematics_initialization, coarse_inverse_kinematics_visualization
 )
+from projectyl.utils.camera_calibration import camera_calibration
 
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
@@ -52,6 +53,10 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     im_list = config[THUMBS][PATH_LIST]
     if "view" in args.algo:
         live_view(im_list, trimming=False, preload_ram=preload_ram)
+    if "camera_calibration" in args.algo:
+        camera_calibration_folder = output/"camera_calibration"
+        camera_calibration(im_list, output_folder=camera_calibration_folder)
+
     if "pose" in args.algo or "ik" in args.algo:
         pose_dir = output/"pose"
         pose_dir.mkdir(parents=True, exist_ok=True)
@@ -106,7 +111,7 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
                         help="Preload video in RAM")
     parser.add_argument_group("algorithm")
     parser.add_argument("-A", "--algo", nargs="+",
-                        choices=["pose", "view", "ik"], default=[])
+                        choices=["pose", "view", "ik", "camera_calibration"], default=[])
     parser.add_argument("-side", "--arm-side", choices=[LEFT, RIGHT], default=RIGHT)
     parser.add_argument("-noviz", "--headless", action="store_true", help="Disable visualizations")
     return batch.parse_args(parser)

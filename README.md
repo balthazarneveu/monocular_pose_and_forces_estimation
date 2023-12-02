@@ -29,9 +29,9 @@ Download models
 wget -O pose_landmarker.task -q https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task
 ```
 
-#### Tools
+#### Processing videos
 ```bash
-python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __out -A pose ik --resize 0.2
+python scripts/batch_video_processing.py -i "data/*.mp4" -o __out -A pose ik --resize 0.2
 ```
 - `-i` regex or list of videos
 - `-o` output folder (*automatically created if not present*)
@@ -41,14 +41,16 @@ python3 scripts/batch_video_processing.py -i "data/*.mp4" -o __out -A pose ik --
   - `-A pose` will run mediapipe pose estimator. (run once, store the results, next time reload)
 > `--override` can be used to recompute images and overwrite previous results.
 
+
+
 ------
 
 ## Modelization
 
-| Pose estimation | Arm model|
-|:------:|:-----:|
-|![](/report/figures/pose_estimation_gui_2.png)| ![](/report/figures/live_arm_vertical.png)
-| :statue_of_liberty:  pose estimated from video | :wrench: Synchronized "Digital twin" | 
+|                Pose estimation                 |                 Arm model                  |
+| :--------------------------------------------: | :----------------------------------------: |
+| ![](/report/figures/pose_estimation_gui_2.png) | ![](/report/figures/live_arm_vertical.png) |
+| :statue_of_liberty:  pose estimated from video |    :wrench: Synchronized "Digital twin"    |
 
 ### Pose estimation
 Using [Google Mediapipe](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), we're able to retrieve
@@ -75,10 +77,10 @@ Estimate inverse dynamics of the system and regularize.
 ### Projective camera geometry
 - Pinhole model is used
 
-| Camera | World |
-|:------:|:-----:|
-| ![](/report/figures/camera_referentials.png) | ![](/report/figures/world_camera_referentials_small.png) |
-|  OpenCV [convention](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html) | Pinocchio convention |
+|                                   Camera                                    |                          World                           |
+| :-------------------------------------------------------------------------: | :------------------------------------------------------: |
+|                ![](/report/figures/camera_referentials.png)                 | ![](/report/figures/world_camera_referentials_small.png) |
+| OpenCV [convention](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html) |                   Pinocchio convention                   |
 
 - [test_camera_projection.py](/test/test_camera_projection.py) has a numerical example showing how you project a 3D point in the pinocchio referential onto the sensor.
   - The top of the Eiffel Tower located $Z=324m$ above the ground (*$Z$  world coordinates*)
@@ -90,10 +92,16 @@ Estimate inverse dynamics of the system and regularize.
 
 
 ### Projecting the arm into the camera plane
-| Camera | World |
-|:------:|:-----:|
+|                     Camera                     |               World                |
+| :--------------------------------------------: | :--------------------------------: |
 | ![](/report/figures/arm_camera_projection.png) | ![](/report/figures/arm_world.png) |
 
+
+
+#### Camera calibration
+```bash
+python scripts/batch_video_processing.py -i "data/*10_*.mp4" -o __out -A camera_calibration
+```
 
 -----
 
