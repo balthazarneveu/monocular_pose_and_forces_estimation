@@ -24,6 +24,44 @@ from projectyl.video.props import INTRINSIC_MATRIX
 from projectyl import root_dir
 
 
+def get_pose_sequences(pose_dir: Path, config: dict, skip_existing: bool = True) -> list:
+    """Retreive pose sequences from a list of images (contained in config).
+    Save in pos_dir if not already saved.
+    """
+    pose_sequence_path = pose_dir/"pose_sequence.pkl"
+    if pose_sequence_path.exists() and skip_existing:
+        pose_annotations = Dump.load_pickle(pose_sequence_path)
+        return pose_annotations
+    pose_dir.mkdir(parents=True, exist_ok=True)
+    detector = None
+    pose_annotations = []
+    pose_annotation_img_list = []
+    for path in config[THUMBS][PATH_LIST]:
+        pose_annotation_img = pose_dir/(Path(path).name)
+        pose_path = pose_annotation_img.with_suffix(".pkl")
+        if pose_path.exists() and skip_existing:
+            assert pose_path.exists()
+            dic_annot = Dump.load_pickle(pose_path)
+        else:
+            if not detector:
+                detector = get_detector()
+            annotations, _ = get_pose(
+                path,
+                detector,
+                visualization_path=pose_annotation_img
+            )
+            dic_annot = {
+                "pose_landmarks": annotations.pose_landmarks,
+                "pose_world_landmarks": annotations.pose_world_landmarks
+            }
+            Dump.save_pickle(dic_annot, pose_path)
+        pose_annotations.append(dic_annot)
+        pose_annotation_img_list.append(pose_annotation_img)
+    if not pose_sequence_path.exists():
+        Dump.save_pickle(pose_annotations, pose_sequence_path)
+    return pose_annotations
+
+
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
     config_file = output/"config.yaml"
@@ -53,6 +91,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             config = Dump.load_yaml(config_file, safe_load=False)
         except Exception as e:
             raise NameError(f"Error loading config file {config_file} {e}")
+    
     im_list = config[THUMBS][PATH_LIST]
     camera_config = {}
     if "camera_calibration" in args.algo:
@@ -61,40 +100,20 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         return  # Finish
     if "view" in args.algo:
         live_view(im_list, trimming=False, preload_ram=preload_ram)
+
     if args.camera_calibration:
         assert Path(args.camera_calibration).exists()
         calib_dict = Dump.load_json(Path(args.camera_calibration))
         config[INTRINSIC_MATRIX] = np.array(calib_dict[INTRINSIC_MATRIX])
         camera_config[INTRINSIC_MATRIX] = config[INTRINSIC_MATRIX]
+
     if "pose" in args.algo or "ik" in args.algo:
         pose_dir = output/"pose"
-        pose_dir.mkdir(parents=True, exist_ok=True)
-        detector = None
-        pose_annotations = []
-        pose_annotation_img_list = []
-        for path in config[THUMBS][PATH_LIST]:
-            pose_annotation_img = pose_dir/(Path(path).name)
-            pose_path = pose_annotation_img.with_suffix(".pkl")
-            if pose_path.exists() and skip_existing:
-                assert pose_path.exists()
-                dic_annot = Dump.load_pickle(pose_path)
-            else:
-                if not detector:
-                    detector = get_detector()
-                annotations, _ = get_pose(
-                    path,
-                    detector,
-                    visualization_path=pose_annotation_img
-                )
-                dic_annot = {
-                    "pose_landmarks": annotations.pose_landmarks,
-                    "pose_world_landmarks": annotations.pose_world_landmarks
-                }
-                Dump.save_pickle(dic_annot, pose_path)
-            pose_annotations.append(dic_annot)
-            pose_annotation_img_list.append(pose_annotation_img)
+        pose_annotations = get_pose_sequences(pose_dir, config, skip_existing=skip_existing)
+
     if "pose" in args.algo and not args.headless:
         interactive_visualize_pose(im_list, pose_annotations, camera_config=camera_config)
+
     if "ik" in args.algo:
         ik_path = output/"coarse_ik.pkl"
         global_params = {}
@@ -106,6 +125,8 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         if not args.headless:
             coarse_inverse_kinematics_visualization(conf_list["q"], global_params)
         plot_ik_states(conf_list)
+
+    # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
