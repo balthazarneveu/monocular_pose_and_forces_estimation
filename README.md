@@ -102,7 +102,7 @@ Estimate inverse dynamics of the system and regularize.
 From a video, shoot a 7x10 checkerboard in multiple orientations.
 Use the [Zhang method](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr98-71.pdf)
 ```bash
-python scripts/batch_video_processing.py -i "data/*calib*.mp4" -o __out -A camera_calibration
+python scripts/batch_video_processing.py -i "data/*cam*calib*.mp4" -o __out -A camera_calibration
 ```
 ![camera_calibration](/report/figures/camera_calibration.gif)
 
