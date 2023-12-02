@@ -5,7 +5,14 @@ The study by \citet{li2019estimating} aimed to reconstruct the 3D motion of a pe
 and applied forces, from a single RGB video. Their methodology unfolds in two principal steps. The first step involves the application of 
 computer vision techniques to accurately determine the human and object poses, as well as the points of contact between them and with the 
 surrounding environment. The second step solves an optimization problem, rooted in control theory principles, to fully recover 
-the dynamic motion.  
+the dynamic motion. The full pipeline can be visualized on~\cref{fig:original_pipeline}.
+
+\begin{figure*}
+    \centering
+    \fbox{\rule{0pt}{2in} \rule{.9\linewidth}{0pt}}
+    \caption{Full original pipeline.}
+    \label{fig:original_pipeline}
+\end{figure*}
 
 
 \subsection{Retrieve Human and Object 3D Pose and Contact from RGB Video}
