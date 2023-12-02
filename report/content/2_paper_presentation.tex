@@ -11,11 +11,11 @@ the dynamic motion.
 \subsection{Retrieve Human and Object 3D Pose and Contact from RGB Video}
 \label{subsec:retrieve_original}
 
-\noindent\textbf{Human 2D Pose Estimation.} For the task of human pose estimation, the authors utilized a pretrained version of 
+\noindent\textbf{Human 2D Pose Estimation.}\label{2dpose} For the task of human pose estimation, the authors utilized a pretrained version of 
 OpenPose~\cite{cao2017realtime}. This tool enabled them to identify and track human joint positions in two dimensions from the RGB video.
 
 \noindent\textbf{Contact Recognition.} The recognition of contact points, being whether specific joints (like feet, hands, and neck) were in 
-contact with the ground or the object, was achieved by first isolating regions in the video frame around the joints identified by OpenPose. 
+contact with the ground or the object, was achieved by first cropping areas in the video frame around the joints identified by OpenPose. 
 These cropped images were then processed through the corresponding joint's ResNet \cite{he2016deep}, which had been trained on a custom dataset 
 to discern contact.
 
@@ -45,11 +45,35 @@ as well as the exerted contact forces, by solving the following trajectory optim
     \end{aligned}
 \end{equation*}
 
-\noindent\textbf{Variables.} The state variables $x \coloneqq (q^h, q^o, \dot{q}^h, \dot{q}^o)$ encompass the configuration and velocities of 
-the human and object, while the control variables $u \coloneqq (\tau_m^h, f_k, k=1, \dots, K)$ include the muscle torques and contact forces 
-at the $K$ contact points. The contact state $c$ represents the presence and locations of contacts throughout the video sequence. 
+\noindent\textbf{Variables.} The state variables \(x \coloneqq (q^h, q^o, \dot{q}^h, \dot{q}^o)\) encompass the configuration and velocities of 
+the human and object, while the control variables \(u \coloneqq (\tau_m^h, f_k, k=1, \dots, K)\) include the muscle torques and contact forces 
+at the \(K\) contact points. The contact state \(c\) represents the presence and locations of contacts throughout the video sequence. 
 
-It is critical to note, although not explicitly stated in the paper, that in their implementation, the velocities ($\dot{q}^h$ and $\dot{q}^o$)
+It should be noted, although not explicitly stated in the paper, that in their implementation, the velocities (\(\dot{q}^h\) and \(\dot{q}^o\))
 are not directly used as variables. Instead, velocities are approximated using the backward finite difference scheme 
-$\dot{q}_t = (q_t - q_{t - 1}) / \Delta t$.
+\(\dot{q}_t = (q_t - q_{t - 1}) / \Delta t\).
 
+\noindent\textbf{Loss Functions.} The loss functions \(l^h\) and \(l^o\) for the human and object respectively consist of the following components:
+
+\begin{itemize}
+    \item 
+        \(l_{2D}\): A term ensuring 2D consistency by minimizing the error between the observed 2D joint positions given by OpenPose and 
+        their re-projections from the 3D estimates, using the camera projection matrix \(P_{\text{cam}}\). Outlier influence is mitigated 
+        by employing the Huber loss function \(\rho\).
+    \item 
+        \(l_{3D}\): This loss ensuring that the estimated 3D positions adhere closely to the HMR references.
+    \item 
+        \(l_{\text{pose}}^h\): A likelihood term for the human pose, encouraging plausible human poses through a Gaussian Mixture Model 
+        trained on motion capture data.
+    \item
+        \(l_{\text{torque}}^h\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
+    \item 
+        Motion smoothness: Terms penalizing rapid movements or accelerations to align with the typically smooth human motion observed over 
+        the video frame rate.
+    \item
+        Force-related terms: These encompass additional forces and contact forces that were not the focus of further investigation in our 
+        study.
+\end{itemize}
+
+The loss function for the object, \(l^o\), is constructed similarly, omitting the 3D consistency and pose likelihood terms due to the nature 
+of object motion and the absence of a pose prior.
