@@ -5,6 +5,7 @@ Asking to trim any video manually
 import argparse
 from batch_processing import Batch
 import sys
+import numpy as np
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args
 from projectyl.utils.interactive import live_view
@@ -19,6 +20,8 @@ from projectyl.dynamics.inverse_kinematics import (
     coarse_inverse_kinematics_initialization, coarse_inverse_kinematics_visualization
 )
 from projectyl.utils.camera_calibration import camera_calibration
+from projectyl.video.props import INTRINSIC_MATRIX
+from projectyl import root_dir
 
 
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
@@ -51,12 +54,16 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         except Exception as e:
             raise NameError(f"Error loading config file {config_file} {e}")
     im_list = config[THUMBS][PATH_LIST]
-    if "view" in args.algo:
-        live_view(im_list, trimming=False, preload_ram=preload_ram)
     if "camera_calibration" in args.algo:
         camera_calibration_folder = output/"camera_calibration"
-        camera_calibration(im_list, output_folder=camera_calibration_folder)
-
+        intrinsic_matrix = camera_calibration(im_list, output_folder=camera_calibration_folder)
+        config[INTRINSIC_MATRIX] = intrinsic_matrix
+        return  # Finish
+    if "view" in args.algo:
+        live_view(im_list, trimming=False, preload_ram=preload_ram)
+    if args.camera_calibration:
+        assert Path(args.camera_calibration).exists()
+        config[INTRINSIC_MATRIX] = np.array(Dump.load_json(Path(args.camera_calibration)))
     if "pose" in args.algo or "ik" in args.algo:
         pose_dir = output/"pose"
         pose_dir.mkdir(parents=True, exist_ok=True)
@@ -114,6 +121,9 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
                         choices=["pose", "view", "ik", "camera_calibration"], default=[])
     parser.add_argument("-side", "--arm-side", choices=[LEFT, RIGHT], default=RIGHT)
     parser.add_argument("-noviz", "--headless", action="store_true", help="Disable visualizations")
+    default_camera_calib = root_dir/"calibration"/"camera_calibration_xiaomi_mi11_ultra_video_vertical.json"
+    parser.add_argument("-calib", "--camera_calibration", type=str,
+                        default=default_camera_calib, help="Camera calibration file")
     return batch.parse_args(parser)
 
 
