@@ -30,7 +30,7 @@ def save_video_frames_moviepy(input_path: Path, output_folder: Path, trim=None, 
                 end = int(end*video.fps)
         for frame_idx, frame in enumerate(video.iter_frames()):
             if end is not None and frame_idx > end:
-                logging.info(f"LAST FRAME REACHED! {frame_idx}>{end}")
+                logging.debug(f"LAST FRAME REACHED! {frame_idx}>{end}")
                 break
             if start is not None and frame_idx <= start:
                 continue
@@ -66,11 +66,11 @@ def save_video_frames(input_path: Path, output_folder: Path, trim=None, resize: 
         if not ret:
             break
         if end is not None and frame_idx > end:
-            logging.info(f"LAST FRAME REACHED! {frame_idx}>{end}")
+            logging.debug(f"LAST FRAME REACHED! {frame_idx}>{end}")
             break
         if start is not None and frame_idx <= start:
             continue
-        logging.info(f"{frame_idx}, {frame.shape}")
+        logging.debug(f"{frame_idx}, {frame.shape}")
         original_size = frame.shape[:2]
         rs_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if resize is not None:
