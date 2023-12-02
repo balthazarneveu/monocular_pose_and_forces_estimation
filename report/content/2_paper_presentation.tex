@@ -53,7 +53,7 @@ It should be noted, although not explicitly stated in the paper, that in their i
 are not directly used as variables. Instead, velocities are approximated using the backward finite difference scheme 
 \(\dot{q}_t = (q_t - q_{t - 1}) / \Delta t\).
 
-\noindent\textbf{Loss Functions.} The loss functions \(l^h\) and \(l^o\) for the human and object respectively consist of the following components:
+\noindent\textbf{Loss Functions.} The loss functions \(l^h\) for the human consists of the following components:
 
 \begin{itemize}
     \item 
@@ -76,3 +76,17 @@ are not directly used as variables. Instead, velocities are approximated using t
 \end{itemize}
 
 The loss function for the object, \(l^o\), is constructed similarly, omitting the 3D consistency and pose likelihood terms.
+
+\noindent\textbf{Constraints.} The optimization process is subject to constraints that govern the full-body dynamics of the human and object 
+interaction. These dynamics are encapsulated by the Lagrange dynamics equation:
+\[
+M(q)\ddot{q} + b(q, \dot{q}) = g(q) + \tau,
+\]
+where \( M(q) \) is the generalized mass matrix, \( b(q, \dot{q}) \) represents the centrifugal and Coriolis forces, \( g(q) \) is the 
+generalized gravity vector, and \( \tau \) denotes the joint torque contributions. Here, \( \dot{q} \) and \( \ddot{q} \) are the joint 
+velocities and accelerations, respectively. This constraint ensures that the estimated motion adheres to the fundamental principles of physics 
+governing movement.
+
+Other constraints, such as those related to contact, are not the focus of our study and thus are not elaborated upon here.
+
+\noindent\textbf{Implementation.}
