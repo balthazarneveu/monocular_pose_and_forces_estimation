@@ -56,8 +56,8 @@ def make_a_scene_in_3D(object_list, viz: MeshcatVisualizer = None) -> MeshcatVis
     """Make the 3D scene with the given objects in Meshcat
 
     Args:
-        object_list (List[dict]): _description_
-        viz (MeshcatVisualizer, optional): _description_. Defaults to None.
+        object_list (List[dict]): List of dictionaries {name, size, color, position}
+        viz (MeshcatVisualizer, optional): meshcat visualizer. Defaults to None.
     """
     if viz is None:
         viz = MeshcatVisualizer()
