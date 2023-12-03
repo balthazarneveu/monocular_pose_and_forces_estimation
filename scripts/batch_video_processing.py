@@ -143,7 +143,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         if not args.headless:
             coarse_inverse_kinematics_visualization(conf_list["q"], global_params)
         plot_ik_states(conf_list)
-
+        # @TODO: Warning with invalid frames!
     # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
 
 
