@@ -104,7 +104,7 @@ def get_pose_sequences(pose_dir: Path, config: dict, skip_existing: bool = True)
     return pose_annotations
 
 
-def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, arm_side=RIGHT, full_solution_flag=False):
+def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, arm_side=RIGHT, full_solution_flag=False, cam_smoothness=0.05):
     if arm_robot is None:
         global_params = {}
         build_arm_model(global_params, headless=True)
@@ -114,14 +114,14 @@ def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, ar
     p4d_data_in = fit_cam.config_states_to_4d_points(q_states, arm_robot)
     solutions = []
     flat_solution = []
-    window = 10
+    window = 30
     for t in tqdm(range(window, len(p4d_data_in)+2*window+1, 2*window+1), desc="fitting camera pose per windows"):
         start = max(0, t-window)
         end = min(t+window+1, len(p4d_data_in))
         win_p4d = p4d_data_in[start:end, :]
         win_p2d = p2d[start:end, :]
         try:
-            solution_ = fit_cam.optimize_camera_pose(win_p4d, win_p2d, intrinsic_matrix, cam_smoothness=0.03)
+            solution_ = fit_cam.optimize_camera_pose(win_p4d, win_p2d, intrinsic_matrix, cam_smoothness=cam_smoothness)
         except Exception as e:
             print(f"Error fitting camera pose {e}")
             solution = solution_
@@ -133,7 +133,7 @@ def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, ar
     if full_solution_flag:
         # THIS CAN BE VERY SLOW!
         full_solution = fit_cam.optimize_camera_pose(
-            p4d_data_in, p2d, intrinsic_matrix, init_var=init_solution, cam_smoothness=0.05)
+            p4d_data_in, p2d, intrinsic_matrix, init_var=init_solution, cam_smoothness=cam_smoothness)
         full_solution = full_solution.reshape(-1, 3)
     else:
         full_solution = solutions_seq
@@ -199,7 +199,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     if FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
         # To fit camera pose, you need to have valid IK
         camera_fit_path = output/"camera_fit.pkl"
-        if camera_fit_path.exists() and skip_existing:
+        if (camera_fit_path.exists() and skip_existing) and args.cam_smoothness is None:
             extrinsic_params = Dump.load_pickle(camera_fit_path)
         else:
             extrinsic_params = fit_camera_pose(
@@ -207,7 +207,8 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
                 pose_annotations,
                 config,
                 config[INTRINSIC_MATRIX],
-                arm_robot=None, arm_side=RIGHT
+                arm_robot=None, arm_side=RIGHT,
+                cam_smoothness=args.cam_smoothness
             )
             Dump.save_pickle(extrinsic_params, camera_fit_path)
         camera_config[EXTRINSIC_MATRIX] = extrinsic_params
@@ -250,6 +251,8 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
     default_camera_calib = root_dir/"calibration"/"camera_calibration_xiaomi_mi11_ultra_video_vertical.json"
     parser.add_argument("-calib", "--camera_calibration", type=str,
                         default=default_camera_calib, help="Camera calibration file")
+    parser.add_argument("-smooth", "--cam-smoothness", type=float, default=None,
+                        help="Camera smoothness")
     return batch.parse_args(parser)
 
 
