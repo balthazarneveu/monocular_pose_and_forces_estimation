@@ -99,6 +99,7 @@ def get_2d_projection_from_arm_config_estimations(
 
     From a sequence of arm configurations,
     get the 3D joints positions and the 2D projections of the arm joints
+    get the 4D homogeneous coordinates of the 3D joints positions for optimization
 
     Args:
         q_states (np.ndarray): config states of the arm (T, 5)
@@ -108,11 +109,15 @@ def get_2d_projection_from_arm_config_estimations(
         joints_list (List[str], optional): joint names. Defaults to [SHOULDER, ELBOW, WRIST].
 
     Returns:
-        Tuple[np.ndarray, np.ndarray]: p2d_estim (T,9), p3d_estim (T,9)
+        Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        - p2d_estim (T,9)
+        - p3d_estim (T,9)
+        - p4d_estim (T, 12)
     """
     # [ELBOW, SHOULDER, WRIST]
     p2d_estim = np.ones((len(q_states), 3*len(joints_list)))
     p3d_estim = np.empty((len(q_states), 3*len(joints_list)))
+    p4d_estim = np.empty((len(q_states), 4*len(joints_list)))
     for time_idx in range(len(q_states)):
         extrinsic_matrix = extrinsic_matrix_list[time_idx]
         for member_idx, member in enumerate(joints_list):
@@ -120,11 +125,14 @@ def get_2d_projection_from_arm_config_estimations(
             point, jac = forward_kinematics(arm_robot, current_q, frame=member)
             p3d = point.translation
             p2d = project_3D_point(p3d, intrinsic_matrix, extrinsic_matrix)
+            p4d = get_4D_homogeneous_vector(p3d)[:, 0]
             p2d_estim[time_idx, member_idx*3:member_idx*3+2] = p2d
             p3d_estim[time_idx, member_idx*3:member_idx*3+3] = p3d
+            p4d_estim[time_idx, member_idx*4:member_idx*4+4] = p4d
     return (
         p2d_estim,  # (T, 9) homogeneous 2D xy1 coordinates
-        p3d_estim  # (T, 9) 3D coordinates XYZ in world
+        p3d_estim,  # (T, 9) 3D coordinates XYZ in world
+        p4d_estim,  # (T, 12) 3D coordinates XYZ1 in world
     )
 
 
