@@ -203,6 +203,66 @@ def project_4d_points_to_2d(
     return p2d_proj
 
 
+def cost_function_camera_projection(
+        extrinsic_params_cam_world: np.ndarray,  # (T, 3)
+        p4d_input: np.ndarray,  # (T, 4, 3)
+        p2d_target: np.ndarray,  # (T, 3*3)
+        intrinsic_matrix: np.ndarray,  # (3,3)
+        extrinsic_matrices_seq: np.ndarray,  # pre-allocated identity (T, 3, 4)
+        cam_smoothness: float = 0.1,
+        debug: bool = False
+) -> np.ndarray:
+    extrinsic_matrices_seq[:, :3, -1] = -extrinsic_params_cam_world.reshape(-1, 3)
+    p2_estim = project_4d_points_to_2d(p4d_input, intrinsic_matrix, extrinsic_matrices_seq)
+    diffx = p2_estim[:, 0::3]-p2d_target[:, 0::3]  # (T, 3*1) remove homogeneous coordinate
+    diffy = p2_estim[:, 1::3]-p2d_target[:, 1::3]
+    diff = np.concatenate([diffx.flatten(), diffy.flatten()])/2000.  # ~ normalize to [0, 1] pixels
+    cam_soothness = extrinsic_params_cam_world.reshape(-1, 3)[:1]-extrinsic_params_cam_world.reshape(-1, 3)[1:]
+    cost = np.concatenate([diff, cam_smoothness*cam_soothness.flatten()])
+    return cost
+
+
+def optimize_camera_pose(
+        p4d_input: np.ndarray,  # (T, 4, 3)
+        p2d_target: np.ndarray,  # (T, 3*3)
+        intrinsic_matrix: np.ndarray,  # (3,3)
+        cam_smoothness: float = 0.1,
+        init_var=None,
+) -> np.ndarray:
+    if init_var is None:
+        init_var = get_4D_homogeneous_vector(np.array([0., -3., 1.]))[:3, 0]
+        init_var = np.array([init_var]*len(p4d_input)).flatten()
+    extrinsic_matrices_seq = np.zeros((len(p4d_input), 3, 4))
+    extrinsic_matrices_seq[:, :3, :3] = np.eye(3)  # pre-allocate identity rotation
+    # cost_init = cost_function_camera_projection(
+    #     init_var, p4d_input, p2d_target, intrinsic_matrix,
+    #     extrinsic_matrices_seq
+    # ).sum()
+    full_solution = least_squares(
+        cost_function_camera_projection,
+        init_var,
+        args=(p4d_input, p2d_target, intrinsic_matrix, extrinsic_matrices_seq, cam_smoothness)
+    ).x
+    return full_solution
+
+
+def __plot_camera_pose(camera_pose_list: dict) -> None:
+    """For debug - visualize camera pose"""
+    plt.figure(figsize=(7, 7))
+    styles = ["-", "--", "-o"]
+    for idx, (name, pose) in enumerate(camera_pose_list.items()):
+        style = styles[idx % len(styles)]
+        plt.plot(pose[:, 0], "r"+style, label=f"{name} X")
+        plt.plot(pose[:, 1], "g"+style, label=f"{name} Y")
+        plt.plot(pose[:, 2], "b"+style, label=f"{name} Z")
+    plt.ylabel("camera position (m)")
+    plt.xlabel("time (frames)")
+    plt.title("camera pose")
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+
 def get_extrinsics_default(
     cam_position_3d_world: np.ndarray = [0., -3., 1.],
     cam_rotation: np.ndarray = np.eye(3)
