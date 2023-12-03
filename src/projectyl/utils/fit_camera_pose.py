@@ -76,10 +76,12 @@ def build_3d_2d_data_arrays(data3d: List[dict], data2d: List[dict], h_w_size: Tu
 def visualize_2d_trajectories(p2d_dict: dict, h_w_size: Tuple[int, int], title="2D image trajectories"):
     h, w = h_w_size
     plt.figure(figsize=(7, 7*h//w))
-    for name, p2d in p2d_dict.items():
-        plt.plot(p2d[:, 0], p2d[:, 1], "r-", label=f"{name} {SHOULDER}")
-        plt.plot(p2d[:, 3], p2d[:, 4], "g-", label=f"{name} {ELBOW}")
-        plt.plot(p2d[:, 6], p2d[:, 7], "b-", label=f"{name} {WRIST}")
+    styles = ["-", "--", "."]
+    for curve_idx, (name, p2d) in enumerate(p2d_dict.items()):
+        st = styles[curve_idx % len(styles)]
+        plt.plot(p2d[:, 0], p2d[:, 1], "r"+st, label=f"{name} {SHOULDER}")
+        plt.plot(p2d[:, 3], p2d[:, 4], "g"+st, label=f"{name} {ELBOW}")
+        plt.plot(p2d[:, 6], p2d[:, 7], "b"+st, label=f"{name} {WRIST}")
     plt.grid()
     plt.legend()
     plt.xlim(0, w)
@@ -94,7 +96,7 @@ def get_2d_projection_from_arm_config_estimations(
     intrinsic_matrix: np.ndarray,
     extrinsic_matrix_list: List[np.ndarray],
     joints_list: List[str] = [SHOULDER, ELBOW, WRIST]
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Forward kinematics to get 3D points and project them to 2D
 
     From a sequence of arm configurations,
@@ -122,7 +124,11 @@ def get_2d_projection_from_arm_config_estimations(
         extrinsic_matrix = extrinsic_matrix_list[time_idx]
         for member_idx, member in enumerate(joints_list):
             current_q = q_states[time_idx]
-            point, jac = forward_kinematics(arm_robot, current_q, frame=member)
+            point, jac = forward_kinematics(
+                arm_robot, current_q,
+                frame=member,
+                forward_update=member_idx == 0  # update forward kinematics only once
+            )
             p3d = point.translation
             p2d = project_3D_point(p3d, intrinsic_matrix, extrinsic_matrix)
             p4d = get_4D_homogeneous_vector(p3d)[:, 0]

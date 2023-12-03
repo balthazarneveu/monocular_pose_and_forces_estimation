@@ -125,10 +125,12 @@ def get_frame_id(arm: ArmRobot, frame: Union[str, int]) -> int:
 
 def forward_kinematics(
     arm: ArmRobot, q: np.ndarray,
-    frame: Optional[Union[str, int]] = WRIST
+    frame: Optional[Union[str, int]] = WRIST,
+    forward_update: bool = True
 ) -> Tuple[pin.SE3, np.ndarray]:
     frame_id = get_frame_id(arm, frame)
-    pin.framesForwardKinematics(arm.model, arm.data, q)
+    if forward_update:
+        pin.framesForwardKinematics(arm.model, arm.data, q)
     o_Mtool = arm.data.oMf[frame_id].copy()
     o_Jtool = pin.computeFrameJacobian(arm.model, arm.data, q, frame_id, pin.LOCAL_WORLD_ALIGNED)
     return o_Mtool, o_Jtool
