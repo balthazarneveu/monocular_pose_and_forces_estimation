@@ -9,7 +9,7 @@ import numpy as np
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args
 from projectyl.utils.interactive import live_view
-from projectyl.video.props import THUMBS, PATH_LIST
+from projectyl.video.props import THUMBS, PATH_LIST, SIZE, INTRINSIC_MATRIX
 from projectyl.utils.properties import LEFT, RIGHT
 from projectyl.utils.arm import plot_ik_states
 import logging
@@ -20,9 +20,11 @@ from projectyl.dynamics.inverse_kinematics import (
     coarse_inverse_kinematics_initialization, coarse_inverse_kinematics_visualization
 )
 from projectyl.utils.camera_calibration import camera_calibration
-from projectyl.video.props import INTRINSIC_MATRIX
 from projectyl import root_dir
-
+from projectyl.utils import fit_camera_pose as fit_cam
+from projectyl.utils.pose_overlay import get_4D_homogeneous_vector
+from projectyl.dynamics.inverse_kinematics import build_arm_model
+from tqdm import tqdm
 POSE = "pose"
 CAMERA_CALIBRATION = "camera_calibration"
 IK = "ik"
@@ -101,6 +103,39 @@ def get_pose_sequences(pose_dir: Path, config: dict, skip_existing: bool = True)
     return pose_annotations
 
 
+def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, arm_side=RIGHT, full_solution_flag=False):
+    if arm_robot is None:
+        global_params = {}
+        build_arm_model(global_params, headless=True)
+        arm_robot = global_params["arm"]
+    h, w = int(config[THUMBS][SIZE][0]), int(config[THUMBS][SIZE][1])
+    p3d, p2d, q_states = fit_cam.build_3d_2d_data_arrays(data3d, data2d, (h, w), arm_side=arm_side)
+    p4d_data_in = fit_cam.config_states_to_4d_points(q_states, arm_robot)
+    solutions = []
+    flat_solution = []
+    window = 10
+    for t in tqdm(range(window, len(p4d_data_in)+2*window+1, 2*window+1), desc="fitting camera pose per windows"):
+        start = max(0, t-window)
+        end = min(t+window+1, len(p4d_data_in))
+        win_p4d = p4d_data_in[start:end, :]
+        win_p2d = p2d[start:end, :]
+        solution = fit_cam.optimize_camera_pose(win_p4d, win_p2d, intrinsic_matrix, cam_smoothness=0.03)
+        flat_solution.append(solution)
+        solution = solution.reshape(-1, 3)
+        solutions.append(solution)
+    solutions_seq = np.concatenate(solutions, axis=0)  # for visualization
+    init_solution = np.concatenate(flat_solution)
+    if full_solution_flag:
+        # THIS CAN BE VERY SLOW!
+        full_solution = fit_cam.optimize_camera_pose(
+            p4d_data_in, p2d, intrinsic_matrix, init_var=init_solution, cam_smoothness=0.05)
+        full_solution = full_solution.reshape(-1, 3)
+    else:
+        full_solution = solutions_seq
+    full_solution_world = np.array([get_4D_homogeneous_vector(sol, reverse=True) for sol in full_solution])
+    return full_solution_world
+
+
 def video_decoding(input: Path, output: Path, args: argparse.Namespace):
     skip_existing = not args.override
     preload_ram = not args.disable_preload_ram
@@ -147,6 +182,7 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         else:
             conf_list, global_params = coarse_inverse_kinematics_initialization(pose_annotations)
             Dump.save_pickle(conf_list, ik_path)
+    if IK in args.algo:
         if not args.headless:
             coarse_inverse_kinematics_visualization(conf_list["q"], global_params)
     if IK in args.algo:
@@ -154,7 +190,27 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         plot_ik_states(conf_list)
     if FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
         # To fit camera pose, you need to have valid IK
-        pass
+        camera_fit_path = output/"camera_fit.pkl"
+        if camera_fit_path.exists() and skip_existing:
+            extrinsic_params = Dump.load_pickle(camera_fit_path)
+        else:
+            extrinsic_params = fit_camera_pose(
+                conf_list,
+                pose_annotations,
+                config,
+                config[INTRINSIC_MATRIX],
+                arm_robot=None, arm_side=RIGHT
+            )
+            Dump.save_pickle(extrinsic_params, camera_fit_path)
+    if FIT_CAMERA_POSE in args.algo:
+        if not args.headless:
+            fit_cam.__plot_camera_pose(
+                {
+                    "full solution - camera pose": extrinsic_params,
+                    # "window init_solution - camera pose": solutions_seq,
+                }
+            )
+
     if DEMO in args.algo:
         # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
         pass
