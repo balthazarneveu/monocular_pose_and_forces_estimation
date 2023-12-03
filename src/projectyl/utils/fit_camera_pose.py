@@ -1,12 +1,7 @@
-import time
-
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-import pinocchio as pin
 from scipy.optimize import least_squares
-from scipy.special import huber
-from projectyl.utils.properties import ELBOW, SHOULDER, WRIST, RIGHT, LEFT
+from projectyl.utils.properties import ELBOW, SHOULDER, WRIST, RIGHT
 from projectyl.video.props import INTRINSIC_MATRIX, THUMBS, SIZE
 from pathlib import Path
 from projectyl.dynamics.inverse_kinematics import forward_kinematics
@@ -15,14 +10,8 @@ from projectyl.utils.camera_projection import project_3D_point
 from projectyl.utils.pose_overlay import get_4D_homogeneous_vector
 from projectyl.utils.io import Dump
 from projectyl import root_dir
-from projectyl.utils.camera_projection import get_4D_homogeneous_vector
-from interactive_pipe.helper import _private
-from scipy.optimize import least_squares
 from typing import List, Tuple
-from projectyl import root_dir
 from projectyl.dynamics.armmodel import ArmRobot
-from matplotlib import pyplot as plt
-import logging
 DEFAULT_CAMERA_CALIBRATION = root_dir/"calibration"/"camera_calibration_xiaomi_mi11_ultra_video_vertical.json"
 
 
@@ -73,15 +62,21 @@ def build_3d_2d_data_arrays(data3d: List[dict], data2d: List[dict], h_w_size: Tu
     )
 
 
-def visualize_2d_trajectories(p2d_dict: dict, h_w_size: Tuple[int, int], title="2D image trajectories"):
+def visualize_2d_trajectories(p2d_dict: dict, h_w_size: Tuple[int, int],
+                              title="2D image trajectories",
+                              t_start=0, t_end=None):
+
     h, w = h_w_size
     plt.figure(figsize=(7, 7*h//w))
     styles = ["-", "--", "."]
     for curve_idx, (name, p2d) in enumerate(p2d_dict.items()):
+        if t_end is None:
+            t_end = 100000000000
+        t_end = min(t_end, len(p2d)-1)
         st = styles[curve_idx % len(styles)]
-        plt.plot(p2d[:, 0], p2d[:, 1], "r"+st, label=f"{name} {SHOULDER}")
-        plt.plot(p2d[:, 3], p2d[:, 4], "g"+st, label=f"{name} {ELBOW}")
-        plt.plot(p2d[:, 6], p2d[:, 7], "b"+st, label=f"{name} {WRIST}")
+        plt.plot(p2d[t_start:t_end, 0], p2d[t_start:t_end, 1], "r"+st, label=f"{name} {SHOULDER}")
+        plt.plot(p2d[t_start:t_end, 3], p2d[t_start:t_end, 4], "g"+st, label=f"{name} {ELBOW}")
+        plt.plot(p2d[t_start:t_end, 6], p2d[t_start:t_end, 7], "b"+st, label=f"{name} {WRIST}")
     plt.grid()
     plt.legend()
     plt.xlim(0, w)
@@ -246,7 +241,7 @@ def optimize_camera_pose(
     return full_solution
 
 
-def __plot_camera_pose(camera_pose_list: dict) -> None:
+def __plot_camera_pose(camera_pose_list: dict, title="camera position - world coordinates") -> None:
     """For debug - visualize camera pose"""
     plt.figure(figsize=(7, 7))
     styles = ["-", "--", "-o"]
@@ -257,7 +252,7 @@ def __plot_camera_pose(camera_pose_list: dict) -> None:
         plt.plot(pose[:, 2], "b"+style, label=f"{name} Z")
     plt.ylabel("camera position (m)")
     plt.xlabel("time (frames)")
-    plt.title("camera pose")
+    plt.title(title)
     plt.grid()
     plt.legend()
     plt.show()
