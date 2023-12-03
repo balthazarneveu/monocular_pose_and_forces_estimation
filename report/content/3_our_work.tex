@@ -90,15 +90,29 @@ Each timestep can be viewed as a separate optimization problem. We can also ensu
 by adding a regularization term on the camera 3D position to the previous cost function $||\frac{\Delta P_{\text{cam}}}{\Delta{t}}||^2$.
 We perform a first quick pass using small windows of 2 second (60 frames) to initialize the camera position sequence.
 In a second pass, we optimize over the whole sequence at once.
+Results are shown in \ref{fig:camera_fitting}
 A rule of thumb on a i7 - 8 core CPU is that this optimizer takes roughly 1 minute to optimize the camera pose a 1 minute long video.
 
 \begin{figure}
     \centering
-    \includegraphics[width=9cm]{figures/camera_pose_fitting_collage.png}
-    \caption{Camera pose fitting on the first 100 frames of the video (doing a circle with the arm). Average reprojection error reported here are computed on the 3 arm joints over the whole video.
-    Estimated distance from the camera to the shoulder is 3 meters with is faithful to the real distance.}
+    \includegraphics[width=8cm]{figures/camera_pose_fitting_collage.png}
+    \caption{Left: projected arm 3D points onto the sensor after camera pose fitting - on the first 100 frames of the video (motion doing a circle with the arm). Average reprojection error reported here are computed on the 3 arm joints over the whole video.
+    Right: Estimated distance from the camera to the shoulder is 3 meters wich is faithful to the real distance.}
     \label{fig:camera_fitting}
 \end{figure}
 
-\subsection{Optimizer}
+\begin{figure*}
+    \centering
+    \includegraphics[width=16cm]{figures/arm_demo.png}
+    \caption{Demo of the pose estimation pipeline.
+    Left: Digital twin of the arm is synchronized witht the GUI. Camera is indicated in pink.
+    Right: graphical user interface to select a specific frame
+    and visualize the 2D joints position (dashed - right curve) aswell as the 3D reprojection of the arm (plain - right curve).}
+    \label{fig:demo}
+\end{figure*}
+
+% \subsection{Initialization of the inverse dynamics optimizer}
+
+
+\subsection{Inverse dynamics optimizer}
 
