@@ -10,6 +10,9 @@ FROZEN_COLOR_CODE = ["r", "g", "b", "y", "m", "c", "k"]
 
 def retrieve_arm_estimation(body_pose_full: list, frame_idx: int, arm_side: str = LEFT, key="pose_world_landmarks") -> dict:
     arm_estim = {}
+    if len(body_pose_full[frame_idx][key]) == 0:
+        logging.warning(f"Empty pose at frame {frame_idx}")
+        return None
     body_pose = body_pose_full[frame_idx][key][0]
     correspondance = [(SHOULDER, 11), (ELBOW, 13), (WRIST, 15)] if arm_side == LEFT else [
         (SHOULDER, 12), (ELBOW, 14), (WRIST, 16)]

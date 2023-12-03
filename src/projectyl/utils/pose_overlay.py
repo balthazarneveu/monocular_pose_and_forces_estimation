@@ -6,7 +6,7 @@ from projectyl.algo.pose_estimation import draw_landmarks_on_image
 from typing import Union, List
 import numpy as np
 from pathlib import Path
-from projectyl.dynamics.inverse_kinematics import update_arm_model, build_arm_model
+from projectyl.dynamics.inverse_kinematics import update_arm_model_inverse_kinematics, build_arm_model
 from projectyl.utils.camera_projection import (
     project_3D_point, get_intrinic_matrix, get_4D_homogeneous_vector,
     get_focal_from_full_frame_equivalent, rescale_focal
@@ -47,7 +47,7 @@ def update_arm_model_filter(
 
     if update_arm:
         build_arm_model(global_params=global_params)
-        update_arm_model(body_pose_full, global_params=global_params,
+        update_arm_model_inverse_kinematics(body_pose_full, global_params=global_params,
                          fit_elbow=ELBOW in fit_mode, fit_wrist=WRIST in fit_mode,
                          scale_constant=scale_constant, arm_side=global_params.get("side", LEFT))
 
