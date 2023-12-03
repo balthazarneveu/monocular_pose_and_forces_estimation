@@ -9,7 +9,7 @@ import numpy as np
 from pathlib import Path
 from projectyl.utils.cli_parser_tool import add_video_parser_args
 from projectyl.utils.interactive import live_view
-from projectyl.video.props import THUMBS, PATH_LIST, SIZE, INTRINSIC_MATRIX
+from projectyl.video.props import THUMBS, PATH_LIST, SIZE, INTRINSIC_MATRIX, EXTRINSIC_MATRIX
 from projectyl.utils.properties import LEFT, RIGHT
 from projectyl.utils.arm import plot_ik_states
 import logging
@@ -24,6 +24,7 @@ from projectyl import root_dir
 from projectyl.utils import fit_camera_pose as fit_cam
 from projectyl.utils.pose_overlay import get_4D_homogeneous_vector
 from projectyl.dynamics.inverse_kinematics import build_arm_model
+from projectyl.utils.interactive_demo import interactive_demo
 from tqdm import tqdm
 POSE = "pose"
 CAMERA_CALIBRATION = "camera_calibration"
@@ -119,9 +120,13 @@ def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, ar
         end = min(t+window+1, len(p4d_data_in))
         win_p4d = p4d_data_in[start:end, :]
         win_p2d = p2d[start:end, :]
-        solution = fit_cam.optimize_camera_pose(win_p4d, win_p2d, intrinsic_matrix, cam_smoothness=0.03)
-        flat_solution.append(solution)
-        solution = solution.reshape(-1, 3)
+        try:
+            solution_ = fit_cam.optimize_camera_pose(win_p4d, win_p2d, intrinsic_matrix, cam_smoothness=0.03)
+        except Exception as e:
+            print(f"Error fitting camera pose {e}")
+            solution = solution_
+        flat_solution.append(solution_)
+        solution = solution_.reshape(-1, 3)
         solutions.append(solution)
     solutions_seq = np.concatenate(solutions, axis=0)  # for visualization
     init_solution = np.concatenate(flat_solution)
@@ -167,6 +172,9 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         config[INTRINSIC_MATRIX] = np.array(calib_dict[INTRINSIC_MATRIX])
         camera_config[INTRINSIC_MATRIX] = config[INTRINSIC_MATRIX]
 
+
+    h, w = int(config[THUMBS][SIZE][0]), int(config[THUMBS][SIZE][1])
+    camera_config[SIZE] = (h, w)
     if POSE in args.algo or IK in args.algo or FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
         pose_dir = output/"pose"
         pose_annotations = get_pose_sequences(pose_dir, config, skip_existing=skip_existing)
@@ -202,6 +210,9 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
                 arm_robot=None, arm_side=RIGHT
             )
             Dump.save_pickle(extrinsic_params, camera_fit_path)
+        camera_config[EXTRINSIC_MATRIX] = extrinsic_params
+    else:
+        camera_config[EXTRINSIC_MATRIX] = None
     if FIT_CAMERA_POSE in args.algo:
         if not args.headless:
             fit_cam.__plot_camera_pose(
@@ -213,7 +224,12 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
 
     if DEMO in args.algo:
         # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
-        pass
+        interactive_demo(
+            im_list,
+            pose_annotations,
+            states_sequences=conf_list,
+            camera_config=camera_config
+        )
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:

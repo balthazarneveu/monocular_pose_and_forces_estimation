@@ -145,6 +145,12 @@ def forward_camera_projection(img_ref, global_params={}):
 def get_camera_config_filter(img_ref, camera_config, global_params={}):
     h, w = img_ref.shape[:2]
     k_default, extrinsic_matrix = get_camera_config(w, h)
+    if EXTRINSIC_MATRIX in camera_config.keys():
+        extrinsic_params = camera_config[EXTRINSIC_MATRIX][global_params["frame_idx"]]
+        extrinsic_matrix = np.zeros((3, 4))
+        extrinsic_matrix[:3, :3] = np.eye(3)
+        cam_pos = get_4D_homogeneous_vector(extrinsic_params)
+        extrinsic_matrix[:3, -1] = -cam_pos[:3, 0]
     k = camera_config.get(INTRINSIC_MATRIX, k_default) if camera_config is not None else k_default
     global_params[INTRINSIC_MATRIX] = k
     global_params[EXTRINSIC_MATRIX] = extrinsic_matrix
