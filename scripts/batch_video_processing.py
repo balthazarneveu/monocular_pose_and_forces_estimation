@@ -104,7 +104,7 @@ def get_pose_sequences(pose_dir: Path, config: dict, skip_existing: bool = True)
     return pose_annotations
 
 
-def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, arm_side=RIGHT, full_solution_flag=False, cam_smoothness=0.05):
+def get_camera_pose_problem_data(data3d, data2d, config, arm_robot=None, arm_side=RIGHT):
     if arm_robot is None:
         global_params = {}
         build_arm_model(global_params, headless=True)
@@ -112,6 +112,15 @@ def fit_camera_pose(data3d, data2d, config, intrinsic_matrix, arm_robot=None, ar
     h, w = int(config[THUMBS][SIZE][0]), int(config[THUMBS][SIZE][1])
     p3d, p2d, q_states = fit_cam.build_3d_2d_data_arrays(data3d, data2d, (h, w), arm_side=arm_side)
     p4d_data_in = fit_cam.config_states_to_4d_points(q_states, arm_robot)
+    return p4d_data_in, p2d
+
+
+def fit_camera_pose(
+    data3d, data2d, config, intrinsic_matrix,
+    arm_robot=None, arm_side=RIGHT, full_solution_flag=False,
+    cam_smoothness=0.05
+):
+    p4d_data_in, p2d = get_camera_pose_problem_data(data3d, data2d, config, arm_robot=arm_robot, arm_side=arm_side)
     solutions = []
     flat_solution = []
     window = 30
@@ -172,7 +181,6 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         config[INTRINSIC_MATRIX] = np.array(calib_dict[INTRINSIC_MATRIX])
         camera_config[INTRINSIC_MATRIX] = config[INTRINSIC_MATRIX]
 
-
     h, w = int(config[THUMBS][SIZE][0]), int(config[THUMBS][SIZE][1])
     camera_config[SIZE] = (h, w)
     if POSE in args.algo or IK in args.algo or FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
@@ -214,20 +222,39 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         camera_config[EXTRINSIC_MATRIX] = extrinsic_params
     else:
         camera_config[EXTRINSIC_MATRIX] = None
+    if FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
+        extr_array = np.array([
+            fit_cam.get_extrinsics_default(extrinsic_params[t_index, :]) for t_index in range(len(extrinsic_params))
+        ])
+        intrinsic_matrix = camera_config[INTRINSIC_MATRIX]
+        p4d_data_in, p2d = get_camera_pose_problem_data(
+            conf_list, pose_annotations, config, arm_robot=None, arm_side=args.arm_side)
+        p2d_fit = fit_cam.project_4d_points_to_2d(p4d_data_in, intrinsic_matrix, extr_array)
+        p2d_dict = {
+            "2d pose estimation": p2d,
+            "fit with moving camera": p2d_fit,
+        }
     if FIT_CAMERA_POSE in args.algo:
         if not args.headless:
             fit_cam.__plot_camera_pose(
                 {
                     "full solution - camera pose": extrinsic_params,
-                    # "window init_solution - camera pose": solutions_seq,
                 }
             )
+            fit_cam.visualize_2d_trajectories(
+                p2d_dict,
+                (h, w),
+                # t_end=100,
+                title="2D image trajectories\n"
+            )
+            # fit_cam.project_4d_points_to_2d(p4d_data_in, intrinsic_matrix, extr_array)
 
     if DEMO in args.algo:
         # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
         interactive_demo(
             im_list,
             pose_annotations,
+            p2d_dict=p2d_dict,
             states_sequences=conf_list,
             camera_config=camera_config
         )
