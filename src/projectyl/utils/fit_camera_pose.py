@@ -90,14 +90,15 @@ def visualize_2d_trajectories(p2d_dict: dict, h_w_size: Tuple[int, int], title="
     plt.show()
 
 
-def get_2d_projection_from_arm_config_estimations(
+def __get_all_projections_from_arm_config_estimations(
     q_states: np.ndarray,
     arm_robot: ArmRobot,
     intrinsic_matrix: np.ndarray,
     extrinsic_matrix_list: List[np.ndarray],
     joints_list: List[str] = [SHOULDER, ELBOW, WRIST]
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Forward kinematics to get 3D points and project them to 2D
+    """HELPER ONLY
+    Forward kinematics to get 3D points and project them to 2D
 
     From a sequence of arm configurations,
     get the 3D joints positions and the 2D projections of the arm joints
@@ -140,6 +141,66 @@ def get_2d_projection_from_arm_config_estimations(
         p3d_estim,  # (T, 9) 3D coordinates XYZ in world
         p4d_estim,  # (T, 12) 3D coordinates XYZ1 in world
     )
+
+
+def config_states_to_4d_points(
+    q_states: np.ndarray,
+    arm_robot: ArmRobot,
+    joints_list: List[str] = [SHOULDER, ELBOW, WRIST]
+) -> Tuple[np.ndarray]:
+    """Forward kinematics on a full state sequence to get 4D homogeneous coordinates
+
+    Args:
+        q_states (np.ndarray): config states of the arm (T, 5)
+        arm_robot (ArmRobot): arm robotic model
+        joints_list (List[str], optional): joint names. Defaults to [SHOULDER, ELBOW, WRIST].
+    Returns:
+        Tuple[np.ndarray]: (T, 4, 3) 3D coordinates XYZ1 in world
+    """
+    p4d_estim = np.empty((len(q_states), 4, len(joints_list)))  # T, 4, 3
+    for time_idx in range(len(q_states)):
+        for member_idx, member in enumerate(joints_list):
+            current_q = q_states[time_idx]
+            point, _jac = forward_kinematics(
+                arm_robot, current_q,
+                frame=member,
+                forward_update=member_idx == 0  # update forward kinematics only once
+            )
+            p3d = point.translation
+            p4d = get_4D_homogeneous_vector(p3d)
+            p4d_estim[time_idx, :, member_idx] = p4d.T
+    return p4d_estim  # (T, 4, 3) 3D coordinates XYZ1 in world
+
+
+def project_4d_points_to_2d(
+    p4d: np.ndarray,  # [T, 4, 3]
+    intrinsic_matrix: np.ndarray,  # [3, 3]
+    extrinsic_matrix_seq: np.ndarray,  # [T, 3, 4]
+) -> np.ndarray:
+    """Pure numpy operation to project 4D points to 2D
+
+    Args:
+        p4d (np.ndarray): (T, 4, 3) Homogeneous 3D coordinates XYZ1 in world
+        intrinsic_matrix (np.ndarray):  (3, 3) intrinsic camera matrix
+        extrinsic_matrix_list (List[np.ndarray]): (T, 3, 4) sequence of extrinsic camera matrices
+
+    Returns:
+        np.ndarray: (T, 9)
+        2d points (x, y, 1) projected to the image plane expressed in pixels
+        [x_shoulder, y_shoulder, 1, x_elbow, y_elbow, 1, x_wrist, y_wrist, 1]
+    """
+    p2d_proj = np.matmul(intrinsic_matrix, np.matmul(extrinsic_matrix_seq, p4d))
+
+    #   K   *   E     * [X, Y, Z, 1]  = [x, y, z]
+    # (3,3) * (T,3,4) * (T, 4, 3)
+
+    p2d_proj = p2d_proj/p2d_proj[:, 2:, :]  # (T, 3, 3)
+    # [x, y, 1]
+
+    p2d_proj = p2d_proj.transpose(0, 2, 1).reshape(-1, p2d_proj.shape[-1]*p2d_proj.shape[-2])
+    # (T , 9)
+    # [x_shoulder, y_shoulder, 1, x_elbow, y_elbow, 1, x_wrist, y_wrist, 1]
+    return p2d_proj
 
 
 def get_extrinsics_default(
