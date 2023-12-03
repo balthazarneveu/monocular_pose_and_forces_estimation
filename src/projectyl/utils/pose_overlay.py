@@ -48,8 +48,8 @@ def update_arm_model_filter(
     if update_arm:
         build_arm_model(global_params=global_params)
         update_arm_model_inverse_kinematics(body_pose_full, global_params=global_params,
-                         fit_elbow=ELBOW in fit_mode, fit_wrist=WRIST in fit_mode,
-                         scale_constant=scale_constant, arm_side=global_params.get("side", LEFT))
+                                            fit_elbow=ELBOW in fit_mode, fit_wrist=WRIST in fit_mode,
+                                            scale_constant=scale_constant, arm_side=global_params.get("side", LEFT))
 
 
 def make_a_scene_in_3D(object_list, viz: MeshcatVisualizer = None) -> MeshcatVisualizer:
@@ -151,6 +151,16 @@ def get_camera_config_filter(img_ref, camera_config, global_params={}):
         extrinsic_matrix[:3, :3] = np.eye(3)
         cam_pos = get_4D_homogeneous_vector(extrinsic_params)
         extrinsic_matrix[:3, -1] = -cam_pos[:3, 0]
+        object_list = {
+            CAMERA: {
+                COLOR: [1., 0.5, 0.5, 1.],
+                POSITION: extrinsic_params,
+                SIZE: [0.05, 0.2, 0.05]
+            }
+        }
+        viz = global_params.get("viz", None)
+        if viz is not None:
+            make_a_scene_in_3D(object_list, viz)
     k = camera_config.get(INTRINSIC_MATRIX, k_default) if camera_config is not None else k_default
     global_params[INTRINSIC_MATRIX] = k
     global_params[EXTRINSIC_MATRIX] = extrinsic_matrix
