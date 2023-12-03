@@ -23,6 +23,13 @@ from projectyl.utils.camera_calibration import camera_calibration
 from projectyl.video.props import INTRINSIC_MATRIX
 from projectyl import root_dir
 
+POSE = "pose"
+CAMERA_CALIBRATION = "camera_calibration"
+IK = "ik"
+VIEW = "view"
+DEMO = "demo"
+FIT_CAMERA_POSE = "fit_cam"
+
 
 def get_trim_config(config_trim_file: Path, input: Path, preload_ram=False) -> dict:
     if config_trim_file.exists():  # and skip_existing:
@@ -112,11 +119,11 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
 
     im_list = config[THUMBS][PATH_LIST]
     camera_config = {}
-    if "camera_calibration" in args.algo:
-        camera_calibration_folder = output/"camera_calibration"
+    if CAMERA_CALIBRATION in args.algo:
+        camera_calibration_folder = output/CAMERA_CALIBRATION
         camera_calibration(im_list, output_folder=camera_calibration_folder)
         return  # Finish
-    if "view" in args.algo:
+    if VIEW in args.algo:
         live_view(im_list, trimming=False, preload_ram=preload_ram)
 
     if args.camera_calibration:
@@ -125,14 +132,14 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
         config[INTRINSIC_MATRIX] = np.array(calib_dict[INTRINSIC_MATRIX])
         camera_config[INTRINSIC_MATRIX] = config[INTRINSIC_MATRIX]
 
-    if "pose" in args.algo or "ik" in args.algo:
+    if POSE in args.algo or IK in args.algo or FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
         pose_dir = output/"pose"
         pose_annotations = get_pose_sequences(pose_dir, config, skip_existing=skip_existing)
 
-    if "pose" in args.algo and not args.headless:
+    if POSE in args.algo and not args.headless:
         interactive_visualize_pose(im_list, pose_annotations, camera_config=camera_config)
 
-    if "ik" in args.algo:
+    if IK in args.algo or FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
         ik_path = output/"coarse_ik.pkl"
         global_params = {}
         if ik_path.exists() and skip_existing:
@@ -142,9 +149,15 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             Dump.save_pickle(conf_list, ik_path)
         if not args.headless:
             coarse_inverse_kinematics_visualization(conf_list["q"], global_params)
-        plot_ik_states(conf_list)
+    if IK in args.algo:
         # @TODO: Warning with invalid frames!
-    # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
+        plot_ik_states(conf_list)
+    if FIT_CAMERA_POSE in args.algo or DEMO in args.algo:
+        # To fit camera pose, you need to have valid IK
+        pass
+    if DEMO in args.algo:
+        # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
+        pass
 
 
 def parse_command_line(batch: Batch) -> argparse.Namespace:
@@ -159,7 +172,7 @@ def parse_command_line(batch: Batch) -> argparse.Namespace:
                         help="Preload video in RAM")
     parser.add_argument_group("algorithm")
     parser.add_argument("-A", "--algo", nargs="+",
-                        choices=["pose", "view", "ik", "camera_calibration"], default=[])
+                        choices=[POSE, VIEW, IK, CAMERA_CALIBRATION, FIT_CAMERA_POSE, DEMO], default=[])
     parser.add_argument("-side", "--arm-side", choices=[LEFT, RIGHT], default=RIGHT)
     parser.add_argument("-noviz", "--headless", action="store_true", help="Disable visualizations")
     default_camera_calib = root_dir/"calibration"/"camera_calibration_xiaomi_mi11_ultra_video_vertical.json"
