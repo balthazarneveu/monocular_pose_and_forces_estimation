@@ -120,6 +120,8 @@ def fit_camera_pose(
     arm_robot=None, arm_side=RIGHT, full_solution_flag=False,
     cam_smoothness=0.05
 ):
+    if cam_smoothness is None:
+        cam_smoothness = 0.05
     p4d_data_in, p2d = get_camera_pose_problem_data(data3d, data2d, config, arm_robot=arm_robot, arm_side=arm_side)
     solutions = []
     flat_solution = []
@@ -147,6 +149,7 @@ def fit_camera_pose(
     else:
         full_solution = solutions_seq
     full_solution_world = np.array([get_4D_homogeneous_vector(sol, reverse=True) for sol in full_solution])
+    full_solution_world = full_solution_world[:p4d_data_in.shape[0], ...]
     return full_solution_world
 
 
