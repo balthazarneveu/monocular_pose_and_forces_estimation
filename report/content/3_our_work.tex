@@ -12,14 +12,16 @@ aspects of the methodology without the computational burden of full-body modelin
 
 For 2D and 3D human pose estimation, we utilized the MediaPipe framework~\cite{lugaresi2019mediapipe}, which offers a more modern alternative 
 to OpenPose. MediaPipe simplifies the vision pipeline by also replacing HMR in our usecase. An illustration of MediaPipe's inference results 
-can be seen in~\cref{fig:mediapipe}. We then only used the arm joint 2D and 3D positions.
+can be seen in~\cref{fig:mediapipe}. We then only used the arm joint 2D and 3D positions. 
 
 \begin{figure}
     \centering
     \includegraphics[width=8cm]{figures/pose_detection_mediapipe_collage.png}
-    \caption{From the full body pose estimated with MediaPipe ~\cite{lugaresi2019mediapipe}, 
-    we extract the arm joints for left and right arms. As a matter of homogeneous graphics,
-    shoulder will always appear as red, elbow as green and wrist as blue. Upper arm will appear as green and forearm as blue.}
+    \caption{
+    \color{red}Shoulder, \color{lime}elbow, \color{blue}wrist \color{black} joints indicated with dots
+    are linked by the \color{lime}upper arm \color{black} and \color{blue}forearm \color{black}. 2D and 3D data is extracted from
+    the full body pose estimated with MediaPipe.
+    }
     \label{fig:mediapipe}
 \end{figure}
 
@@ -70,7 +72,7 @@ where
 
 \subsubsection{Camera calibration}
 To reduce the number of degrees of freedom, we always used the same camera through all our tests and 
-we pre-calibrated the camera intrinsics $K$
+we pre-calibrated the camera intrinsics $K$. Please refer to \ref{sec:cam_calib}
 
 \subsubsection{Camera pose optimization}
 Each timestep can be viewed as a separate optimization problem. We can also ensure better temporal coherence
