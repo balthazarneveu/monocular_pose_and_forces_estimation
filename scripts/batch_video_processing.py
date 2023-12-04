@@ -237,8 +237,9 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             "2d pose estimation": p2d,
             "fit with moving camera": p2d_fit,
         }
-    if FIT_CAMERA_POSE in args.algo:
+    if FIT_CAMERA_POSE in args.algo and DEMO not in args.algo:
         if not args.headless:
+            # WARNING: does not work with DEMO
             fit_cam.__plot_camera_pose(
                 {
                     "full solution - camera pose": extrinsic_params,
@@ -253,7 +254,6 @@ def video_decoding(input: Path, output: Path, args: argparse.Namespace):
             # fit_cam.project_4d_points_to_2d(p4d_data_in, intrinsic_matrix, extr_array)
 
     if DEMO in args.algo:
-        # TODO: plot 2D pose + preprocessed 3D pose from IK + 3D trajectory
         interactive_demo(
             im_list,
             pose_annotations,
