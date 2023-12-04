@@ -9,6 +9,7 @@ import projectyl.utils.fit_camera_pose as fit_cam
 from projectyl.utils.pose_overlay import get_camera_config_filter, overlay_pose, forward_camera_projection
 from interactive_pipe.data_objects.curves import Curve, SingleCurve
 from interactive_pipe import interactive
+from interactive_pipe import Control, KeyboardControl
 
 
 def update_arm_robot_live(q_states, global_params={}):
@@ -96,6 +97,23 @@ def update_traj(current_curve_in: Curve, p2d_dict, global_params={}):
     return current_curve
 
 
+CANVAS_DICT = {
+    "vision": [["pose_estimation", "reprojection"]],
+    "trajectories": [["trajectory",]],
+    "full": [["pose_estimation", "reprojection", "trajectory"]],
+}
+CANVAS = list(CANVAS_DICT.keys())
+
+
+@interactive(
+    # canvas=KeyboardControl(0, [0, len(CANVAS)], name="canvas", keyup="p", modulo=True)
+    canvas=KeyboardControl(CANVAS[0], CANVAS, name="canvas", keyup="p", modulo=True)
+)
+def morph_canvas(canvas=CANVAS[0], global_params={}):
+    global_params["__pipeline"].outputs = CANVAS_DICT[canvas]
+    return None
+
+
 def demo_pipeline(sequence, pose_annotations, camera_config, q_states, p2d_dict):
     traj = trajectories(p2d_dict, camera_config)
     frame = frame_selector(sequence)
@@ -105,9 +123,8 @@ def demo_pipeline(sequence, pose_annotations, camera_config, q_states, p2d_dict)
     update_arm_robot_live(q_states)
     reprojection = forward_camera_projection(frame_overlay)
     pose_estimation = crop(frame_overlay)
-    return pose_estimation, trajectory #, trajectory
-    # return pose_estimation, reprojection, trajectory
-    # return [[pose_estimation, reprojection], [trajectory, None]]
+    morph_canvas()
+    return pose_estimation, trajectory
 
 
 def interactive_demo(sequence: Union[Path, List[np.ndarray]], pose_annotations, p2d_dict=None, states_sequences=None, camera_config={}):
