@@ -70,20 +70,7 @@ where
 
 \subsubsection{Camera calibration}
 To reduce the number of degrees of freedom, we always used the same camera through all our tests and 
-we pre-calibrated the camera intrinsics $K$ using a 7x10 printed checkerboard 
-and the OpenCV implementation of the Zhang's method~\cite{Zhang00calib}.
-Below, we detail the focal length estimation from camera specifications.
-Xiaomi Mi11 Ultra main camera ($2.8\mu m$ pixel pitch) specifications in photo mode:
-\begin{itemize}
-    \item 24mm focal length - full frame (24x36mm) equivalent
-    \item Sensor size 4000x3000 = 12Mpix
-\end{itemize}
-We end up with a focal length for the photo mode of $f_{\text{pix}}^{\text{photo}}  = 24mm * 4000px / 36mm = 2666px$.
-
-But since we're using a FullHD video mode with a crop factor of around 15\% on each side,
-it is needed to rescale the focal length acordingly $f_{\text{pix}}^{\text{video}} = 2666px * 1.3 * \frac{1920px}{4000px} \approx 1664px$.
-Calibration method provides a estimated focal length of $1690px$ which is close enough to the specifications.
-We assume the camera to be a pinhole and neglect radial distortion.
+we pre-calibrated the camera intrinsics $K$
 
 \subsubsection{Camera pose optimization}
 Each timestep can be viewed as a separate optimization problem. We can also ensure better temporal coherence
