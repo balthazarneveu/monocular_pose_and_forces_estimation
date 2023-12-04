@@ -1,9 +1,14 @@
 \section{Appendix}
 \subsection{Camera calibration}
 \label{sec:cam_calib}
-using a 7x10 printed checkerboard 
-and the OpenCV implementation of the Zhang's method~\cite{Zhang00calib}.
-Below, we detail the focal length estimation from camera specifications.
+Since we're working in a controlled environment (not in the wild, unlike the original paper), we calibrate a single camera once and for all,
+\begin{itemize}
+    \item using a 7x10 printed checkerboard shot in various orientations
+    \item  using the OpenCV implementation of the Zhang's method~\cite{Zhang00calib}.
+\end{itemize}
+
+Below, we detail the focal length estimation from camera specifications
+and make sure it matches with the calibration estimation.
 Xiaomi Mi11 Ultra main camera ($2.8\mu m$ pixel pitch) specifications in photo mode:
 \begin{itemize}
     \item 24mm focal length - full frame (24x36mm) equivalent
