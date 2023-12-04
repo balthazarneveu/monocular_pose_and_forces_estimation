@@ -125,10 +125,12 @@ def get_frame_id(arm: ArmRobot, frame: Union[str, int]) -> int:
 
 def forward_kinematics(
     arm: ArmRobot, q: np.ndarray,
-    frame: Optional[Union[str, int]] = WRIST
+    frame: Optional[Union[str, int]] = WRIST,
+    forward_update: bool = True
 ) -> Tuple[pin.SE3, np.ndarray]:
     frame_id = get_frame_id(arm, frame)
-    pin.framesForwardKinematics(arm.model, arm.data, q)
+    if forward_update:
+        pin.framesForwardKinematics(arm.model, arm.data, q)
     o_Mtool = arm.data.oMf[frame_id].copy()
     o_Jtool = pin.computeFrameJacobian(arm.model, arm.data, q, frame_id, pin.LOCAL_WORLD_ALIGNED)
     return o_Mtool, o_Jtool
@@ -151,7 +153,7 @@ def permute_estimated_poses(joint_pos):
     return target_position
 
 
-def update_arm_model(
+def update_arm_model_inverse_kinematics(
     body_pose_full, global_params={}, fit_wrist=True,
     fit_elbow=False, scale_constant=1., arm_side=LEFT,
     progress_bar=False
@@ -164,6 +166,8 @@ def update_arm_model(
     }
     frame_idx = global_params["frame_idx"]
     arm_estim = retrieve_arm_estimation(body_pose_full, frame_idx, arm_side)
+    if arm_estim is None:
+        return global_params.get("q", None), None, None
     # backward_project(arm_estim, global_params["intrisic_matrix"])
     arm = global_params.get("arm", None)
     viz = global_params.get("viz", None)
@@ -253,22 +257,27 @@ def coarse_inverse_kinematics_initialization(
         list of states, and global params in case you need to retieve
         the arm model or visualization afterwards
     """
-    # @TODO: store the 3D positions
     # @TODO: go backwards to refine
     global_params = {}
     q_list = []
     joint_3d_positions_list = []
     original_joint_3d_positions_list = []
+    valid_frames_list = []
+    invalid_frames_list = []
     build_arm_model(global_params=global_params, headless=visualize_ik_iterations)
     for frame_idx in tqdm(range(len(estimated_poses))):
         global_params["frame_idx"] = frame_idx
-        q_estimation, joint_3d_positions, original_joint_3d_positions = update_arm_model(
+        q_estimation, joint_3d_positions, original_joint_3d_positions = update_arm_model_inverse_kinematics(
             estimated_poses, global_params=global_params, arm_side=arm_side,
             fit_elbow=True, fit_wrist=True, scale_constant=1., progress_bar=False)
-        q_list.append(q_estimation)
-        joint_3d_positions_list.append(joint_3d_positions)
-        original_joint_3d_positions_list.append(original_joint_3d_positions)
+        if joint_3d_positions is not None:  # SUPPORT EMPTY FRAMES
+            valid_frames_list.append(frame_idx)
+            q_list.append(q_estimation)
+            joint_3d_positions_list.append(joint_3d_positions)
+            original_joint_3d_positions_list.append(original_joint_3d_positions)
     config = {
+        "invalid_frames_list": invalid_frames_list,
+        "valid_frames_list": valid_frames_list,
         "q": q_list,
         "3dpoints": {
             "list": joint_3d_positions_list,

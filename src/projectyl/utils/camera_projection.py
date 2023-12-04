@@ -3,7 +3,7 @@ import numpy as np
 from typing import Tuple
 
 
-def get_4D_homogeneous_vector(pos: np.ndarray) -> np.ndarray:
+def get_4D_homogeneous_vector(pos: np.ndarray, reverse: bool = False) -> np.ndarray:
     """Permute coordinates and add a 1 at the end
 
     Args:
@@ -40,7 +40,9 @@ def get_4D_homogeneous_vector(pos: np.ndarray) -> np.ndarray:
     This could be done by incorporating a permutation
     to the camera extrinsic matrix
     """
-
+    # @TODO: make this vectorized to handle (T, 3) -> (T, 4, 1)
+    if reverse:
+        return np.array([pos[0], pos[2], -pos[1]])
     return np.array([pos[0], -pos[2], pos[1], 1.]).reshape(4, 1)
 
 

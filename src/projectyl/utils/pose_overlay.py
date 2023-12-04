@@ -1,11 +1,12 @@
 from projectyl.utils.properties import COLOR, POSITION, SIZE, ELBOW, SHOULDER, WRIST, CAMERA, LEFT, RIGHT
+from projectyl.video.props import INTRINSIC_MATRIX, EXTRINSIC_MATRIX
 from projectyl.utils.interactive import frame_selector, crop
 from interactive_pipe import interactive, interactive_pipeline
 from projectyl.algo.pose_estimation import draw_landmarks_on_image
 from typing import Union, List
 import numpy as np
 from pathlib import Path
-from projectyl.dynamics.inverse_kinematics import update_arm_model, build_arm_model
+from projectyl.dynamics.inverse_kinematics import update_arm_model_inverse_kinematics, build_arm_model
 from projectyl.utils.camera_projection import (
     project_3D_point, get_intrinic_matrix, get_4D_homogeneous_vector,
     get_focal_from_full_frame_equivalent, rescale_focal
@@ -46,17 +47,17 @@ def update_arm_model_filter(
 
     if update_arm:
         build_arm_model(global_params=global_params)
-        update_arm_model(body_pose_full, global_params=global_params,
-                         fit_elbow=ELBOW in fit_mode, fit_wrist=WRIST in fit_mode,
-                         scale_constant=scale_constant, arm_side=global_params.get("side", LEFT))
+        update_arm_model_inverse_kinematics(body_pose_full, global_params=global_params,
+                                            fit_elbow=ELBOW in fit_mode, fit_wrist=WRIST in fit_mode,
+                                            scale_constant=scale_constant, arm_side=global_params.get("side", LEFT))
 
 
 def make_a_scene_in_3D(object_list, viz: MeshcatVisualizer = None) -> MeshcatVisualizer:
     """Make the 3D scene with the given objects in Meshcat
 
     Args:
-        object_list (List[dict]): _description_
-        viz (MeshcatVisualizer, optional): _description_. Defaults to None.
+        object_list (List[dict]): List of dictionaries {name, size, color, position}
+        viz (MeshcatVisualizer, optional): meshcat visualizer. Defaults to None.
     """
     if viz is None:
         viz = MeshcatVisualizer()
@@ -100,7 +101,7 @@ def forward_camera_projection(img_ref, global_params={}):
     arm = global_params["arm"]
     q = global_params.get("q", arm.q0)
     h, w = img_ref.shape[:2]
-    k, extrinsic_matrix = global_params.get("intrinsic_matrix", None), global_params.get("extrinsic_matrix", None)
+    k, extrinsic_matrix = global_params.get(INTRINSIC_MATRIX, None), global_params.get(EXTRINSIC_MATRIX, None)
     if k is None or extrinsic_matrix is None:
         k, extrinsic_matrix = get_camera_config(w, h, viz=viz)
     p2d_list = {}
@@ -141,17 +142,34 @@ def forward_camera_projection(img_ref, global_params={}):
 
 
 @interactive()
-def get_camera_config_filter(img_ref, global_params={}):
+def get_camera_config_filter(img_ref, camera_config, global_params={}):
     h, w = img_ref.shape[:2]
-    k, extrinsic_matrix = get_camera_config(w, h)
-    global_params["intrinsic_matrix"] = k
-    global_params["extrinsic_matrix"] = extrinsic_matrix
+    k_default, extrinsic_matrix = get_camera_config(w, h)
+    if EXTRINSIC_MATRIX in camera_config.keys():
+        extrinsic_params = camera_config[EXTRINSIC_MATRIX][global_params["frame_idx"]]
+        extrinsic_matrix = np.zeros((3, 4))
+        extrinsic_matrix[:3, :3] = np.eye(3)
+        cam_pos = get_4D_homogeneous_vector(extrinsic_params)
+        extrinsic_matrix[:3, -1] = -cam_pos[:3, 0]
+        object_list = {
+            CAMERA: {
+                COLOR: [1., 0.5, 0.5, 1.],
+                POSITION: extrinsic_params,
+                SIZE: [0.05, 0.2, 0.05]
+            }
+        }
+        viz = global_params.get("viz", None)
+        if viz is not None:
+            make_a_scene_in_3D(object_list, viz)
+    k = camera_config.get(INTRINSIC_MATRIX, k_default) if camera_config is not None else k_default
+    global_params[INTRINSIC_MATRIX] = k
+    global_params[EXTRINSIC_MATRIX] = extrinsic_matrix
     pass
 
 
-def visualize_pose(sequence, pose_annotations):
+def visualize_pose(sequence, pose_annotations, camera_config):
     frame = frame_selector(sequence)
-    get_camera_config_filter(frame)
+    get_camera_config_filter(frame, camera_config)
     frame_overlay = overlay_pose(frame, pose_annotations)
     update_arm_model_filter(pose_annotations)
     reproj = forward_camera_projection(frame_overlay)
@@ -159,6 +177,6 @@ def visualize_pose(sequence, pose_annotations):
     return cropped, reproj
 
 
-def interactive_visualize_pose(sequence: Union[Path, List[np.ndarray]], pose_annotations):
+def interactive_visualize_pose(sequence: Union[Path, List[np.ndarray]], pose_annotations, camera_config={}):
     int_viz = interactive_pipeline(gui="auto", cache=True)(visualize_pose)
-    int_viz(sequence, pose_annotations)
+    int_viz(sequence, pose_annotations, camera_config)
