@@ -187,9 +187,12 @@ excludes the pose likelihood term since we target only the arm. The remaining te
     \item 
         \(l_{3D}\): Ensures 3D position estimates align with the MediaPipe references.
     \item
-        \(l_{\text{torque}}^h\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
+        \(l_{\text{torque}}\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
     \item 
-        Motion smoothness: Terms penalizing rapid movements or accelerations.
+        \(l_{\text{smooth}}\): Motion smoothness.
+        This cost term penalizes rapid movements or accelerations.
+        $l_{\text{smooth}} = \sum_{j} ||v_j(q, \dot{q})||^2 + ||\alpha_j(q, \dot{q}, \ddot{q})||^2$
+    penalizes high 3D linear velocities and accelerations for each joint $j$.
 \end{itemize}
 
 \noindent\textbf{Constraints.} The arm dynamics are governed by the Lagrangian equation:
@@ -221,7 +224,7 @@ in~\cref{fig:gt_free_fall}.
     \label{fig:gt_free_fall}
 \end{figure}
 
-The optimizer was provided with the ground truth 3D poses and initial state vectors \(q_1, \ldots, q_T\) and zero torques. Without torque 
+We fed the optimizer with the ground truth 3D poses and initial state vectors \(q_1, \ldots, q_T\) and zero torques. Without torque 
 regularization, the optimizer yielded physically implausible torque estimations, despite low pose error, as shown 
 in~\cref{fig:free_fall_no_torque}.
 
@@ -270,6 +273,7 @@ they demonstrate the optimizer's capability to reconstruct coherent torques.
 
 
 \noindent\textbf{Real Data.} When applying our optimizer to real-world data, we encountered several challenges. 
-The optimization process in SciPy proved significantly slower on real data, with 2 seconds of video requiring upwards of 10 minutes of 
+The optimization process in SciPy proved significantly slower on real data, with 2 seconds of video requiring up to 10 minutes of 
 computation. Moreover, time constraints and the intricate nature of fine-tuning the loss weights for the optimizer prevented extensive 
-testing on real data. Consequently, we could not obtain conclusive results from real-world experiments.
+testing on real data. Consequently, we could not obtain conclusive results from real-world experiments. We also understand
+why the authors of the original paper chose to compile the inverse dynamics optimizer program based on CERES and Pinocchio.
