@@ -161,5 +161,47 @@ A rule of thumb on a i7 - 8 core CPU is that this optimizer takes roughly 1 minu
 \end{figure*}
 
 \subsection{Inverse dynamics optimizer}
+\label{subsec:inverse_dynamics}
 
-For simplicity reasons, the solver was implemented in python, using the SciPy implementation of the Levenberg-Marquardt algorithm.
+Given the simplifications discussed in~\cref{subsec:arm_model}, we reformulated the optimization problem as follows:
+
+\begin{equation*}
+    \begin{aligned}
+        & \underset{q,\tau_m}{\text{minimize}} \quad \int_{0}^{T} l(q, \tau_m)\, dt \\
+        & \text{subject to} \quad \dot{q} = f(q, \tau_m) \quad \text{(full-arm dynamics)}.
+    \end{aligned}
+\end{equation*}
+
+\noindent\textbf{Variables.} The model variables consist of the arm's configuration vector \(q\) and the muscle joint torques \(\tau_m\). 
+We adopted the midpoint method to approximate \(\dot{q}\) for its enhanced precision and because it provides velocity information precisely 
+at instant \(t\).
+\[
+    \dot{q}_t = (q_{t + 1} - q_{t - 1}) / 2\Delta t
+\]
+Acceleration was computed in a similar fashion.
+
+\noindent\textbf{Loss Functions.} Our loss function \(l\) omits \(l_{2D}\) due to the already accurate 3D pose estimates and 
+excludes the pose likelihood term since we target only the arm. The remaining terms include:
+
+\begin{itemize}
+    \item 
+        \(l_{3D}\): Ensures 3D position estimates align with the MediaPipe references.
+    \item
+        \(l_{\text{torque}}^h\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
+    \item 
+        Motion smoothness: Terms penalizing rapid movements or accelerations.
+\end{itemize}
+
+\noindent\textbf{Constraints.} The arm dynamics are governed by the Lagrangian equation:
+
+\[
+M(q)\ddot{q} + b(q, \dot{q}) = g(q) + \tau
+\].
+
+\noindent\textbf{Implementation.} We discretized the continuous-time problem, and use the midpoint method for derivative approximation. 
+Pinocchio facilitated the computation of kinematic and dynamic quantities. 
+The optimization was carried out using the Levenberg-Marquardt algorithm implemented in the SciPy library, 
+chosen for its ease of integration with our Python-based pipeline. 
+Constraint enforcement was achieved by embedding them as penalty terms within the loss function.
+
+\noindent\textbf{Results.}
