@@ -198,10 +198,53 @@ excludes the pose likelihood term since we target only the arm. The remaining te
 M(q)\ddot{q} + b(q, \dot{q}) = g(q) + \tau
 \].
 
-\noindent\textbf{Implementation.} We discretized the continuous-time problem, and use the midpoint method for derivative approximation. 
+\noindent\textbf{Implementation.} We discretized the continuous-time problem, 
+and use the midpoint method for derivative approximation. 
 Pinocchio facilitated the computation of kinematic and dynamic quantities. 
 The optimization was carried out using the Levenberg-Marquardt algorithm implemented in the SciPy library, 
 chosen for its ease of integration with our Python-based pipeline. 
 Constraint enforcement was achieved by embedding them as penalty terms within the loss function.
 
-\noindent\textbf{Results.}
+\subsection{Inverse Dynamics Results}
+\label{subsec:dynamic_results}
+
+Our initial tests of the optimizer were conducted on simulated data, enabling us to assess its performance and fine-tune the loss weights.
+
+\noindent\textbf{Free Fall, Simulated.} We began with a simple free-fall scenario. The arm's initial configuration was horizontal to the ground, with an elbow angle of 
+\(\pi/4\) radians. This simulation was performed using the Runge–Kutta 2 method, and the resulting ground truth is depicted 
+in~\cref{fig:gt_free_fall}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/free_fall_gt.png}
+    \caption{Simulated ground truth data of free fall.}
+    \label{fig:gt_free_fall}
+\end{figure}
+
+The optimizer was provided with the ground truth 3D poses and initial state vectors \(q_1, \ldots, q_T\) and zero torques. Without torque 
+regularization, the optimizer yielded physically implausible torque estimations, despite low pose error, as shown 
+in~\cref{fig:free_fall_no_torque}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/free_fall_no_torque.png}
+    \caption{Torque estimation without regularization, showing erroneous non-zero torques despite accurate pose estimation.}
+    \label{fig:free_fall_no_torque}
+\end{figure}
+
+These inaccuracies are attributed to the midpoint approximation for velocities and accelerations, and potential undersampling, which 
+introduces errors that the optimizer compensates for with non-zero torques.
+
+Incorporating torque regularization significantly improved the results. While the pose error marginally increased, it remained within a 
+reasonable range of a few millimeters. Crucially, the torque estimates were much closer to the expected zero value, as illustrated 
+in~\cref{fig:free_fall_torque}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/free_fall_torque.png}
+    \caption{Torque estimation with regularization, showing a pose error still fairly low and torques that align much more closely with the ground truth.}
+    \label{fig:free_fall_torque}
+\end{figure}
+
+These findings highlight the importance of torque regularization in maintaining physical plausibility, especially when dealing with 
+approximations issues.
