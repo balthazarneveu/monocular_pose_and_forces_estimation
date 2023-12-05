@@ -12,6 +12,7 @@ Review of the paper Estimating 3D Motion and Forces of Person-Object Interaction
     - [Balthazar Neveu](https://github.com/balthazarneveu)
     - [Matthieu Dinot](https://github.com/mattx20)
 
+:scroll: [Poster](/poster/poster_robotics_neveu_dinot.pdf)
 
 ### Summary
 The original paper estimates 3D poses and internal torques / external forces applied on a human interacting with a tool.
@@ -84,9 +85,13 @@ python scripts/batch_video_processing.py -i "data/*.mp4" -o __out -A demo
 | :statue_of_liberty:  pose estimated from video |    :wrench: Synchronized "Digital twin"    |
 
 
-> color code for joints: :red_circle: shoulder , :green_circle: elbow, :large_blue_circle: wrist
-> 
-> limbs: :green_circle: upper-arm , :large_blue_circle: forearm
+color code for joints:
+- :red_circle: shoulder
+- :green_circle: elbow
+- :large_blue_circle: wrist 
+- limbs: :green_circle: upper-arm 
+- :large_blue_circle: forearm
+
 ### Pose estimation
 Using [Google Mediapipe](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), we're able to retrieve
 - 2D projected points
