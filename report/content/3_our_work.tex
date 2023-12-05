@@ -248,3 +248,28 @@ in~\cref{fig:free_fall_torque}.
 
 These findings highlight the importance of torque regularization in maintaining physical plausibility, especially when dealing with 
 approximations issues.
+
+\noindent\textbf{Free Fall with Friction, Simulated.} We tested the free fall with friction, represented by the equation 
+\(\tau_m = -0.1\dot{q}\). This test aimed to evaluate the optimizer's ability to reconstruct non-trivial torque values. Ground truth and results, 
+shown in~\cref{fig:free_fall_friction_gt} and~\cref{fig:free_fall_friction}, indicate that while the results are not flawless, 
+they demonstrate the optimizer's capability to reconstruct coherent torques.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/free_fall_friction_gt.png}
+    \caption{Simulated ground truth data of free fall with friction.}
+    \label{fig:free_fall_friction_gt}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/free_fall_friction.png}
+    \caption{Results of the optimization on the free fall with friction.}
+    \label{fig:free_fall_friction}
+\end{figure}
+
+
+\noindent\textbf{Real Data Challenges.} When applying our optimizer to real-world data, we encountered several challenges. 
+The optimization process in SciPy proved significantly slower on real data, with 2 seconds of video requiring upwards of 10 minutes of 
+computation. Moreover, time constraints and the intricate nature of fine-tuning the loss weights for the optimizer prevented extensive 
+testing on real data. Consequently, we could not obtain conclusive results from real-world experiments.
