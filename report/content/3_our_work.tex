@@ -1,9 +1,8 @@
 \section{Reimplementation Strategy}
 \label{sec:remplementation}
 
-The code accompanying the original paper  is poorly written, poorly documented, and is formed of several complex and independant blocks. 
-To effectively explore the core contributions of the paper,
-we decided to reimplement parts of it with a more focused scope.
+The code accompanying the orignial paper is rather difficult to use due to its inherent complexity and lack of documentation. 
+To effectively explore the core contributions of the paper, we decided to reimplement parts of it with a more focused scope.
 
 In our approach, we focused on reconstructing arm motion from video data,
 a simplification that allowed us to tackle the fundamental 
@@ -46,7 +45,7 @@ Due to lack of time, we were not able to implement the inverse kinematics which 
 the camera pose and the arm state $q$.
 
 Finally, using the above $q$ state estimation as an initialization,
-we implemented a proof of concept for the inverse dynamics optimizer focusing on:
+we implemented a proof of concept for the inverse dynamics optimizer (\ref{subsec:inverse_dynamics}) focusing on:
 \begin{itemize}
     \item minimizing $l_{\text{3D}}$ the 3D reprojection error of the arm joints.
     \item under relaxed dynamic constraint.
@@ -120,7 +119,7 @@ Our simplification unfortunately leads to a degenerate problem where the camera 
 To avoid this issue, we decided to fix the camera orientation. 
 We estimate the camera 3D position $P_{\text{cam}}(t)$ 
 by jointly minimizing the 2D reprojection error of joints.
-$$\underset{P_{\text{cam}}(t)}{min}\sum_{j\in{\text{shoulder, elbow, wrist}}} ||K.\big[Q_{\text{cam}} | P_{\text{cam}}(t)] \vec{X}^{(j)}(t) - \vec{x}^{(j)}(t) ||$$
+$$\underset{P_{\text{cam}}(t)}{min}\sum_{j\in{\text{shoulder, elbow, wrist}}} \|K\cdot\left[Q_{\text{cam}} | P_{\text{cam}}(t)\right] \vec{X}^{(j)}(t) - \vec{x}^{(j)}(t) \|^2$$
 where
 \begin{itemize}
     \item $K$ is the camera 3x3 intrinsic matrix
@@ -173,7 +172,7 @@ Given the simplifications discussed in~\cref{subsec:arm_model}, we reformulated 
 \end{equation*}
 
 \noindent\textbf{Variables.} The model variables consist of the arm's configuration vector \(q\) and the muscle joint torques \(\tau_m\). 
-We adopted the midpoint method to approximate \(\dot{q}\) for its enhanced precision and because it provides velocity information precisely 
+We adopted the central difference scheme to approximate \(\dot{q}\) for its enhanced precision and because it provides velocity information precisely 
 at instant \(t\).
 \[
     \dot{q}_t = (q_{t + 1} - q_{t - 1}) / 2\Delta t
@@ -190,19 +189,19 @@ excludes the pose likelihood term since we target only the arm. The remaining te
         \(l_{\text{torque}}\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
     \item 
         \(l_{\text{smooth}}\): Motion smoothness.
-        This cost term penalizes rapid movements or accelerations.
-        $l_{\text{smooth}} = \sum_{j} ||v_j(q, \dot{q})||^2 + ||\alpha_j(q, \dot{q}, \ddot{q})||^2$
-    penalizes high 3D linear velocities and accelerations for each joint $j$.
+        This cost term penalizes rapid movements and accelerations.
 \end{itemize}
 
-\noindent\textbf{Constraints.} The arm dynamics are governed by the Lagrangian equation:
+Theses terms are the same than the corresponding ones in~\cref{subsec:reconstruct_original}.
+
+\noindent\textbf{Constraints.} The arm dynamics are governed by the Lagrange dynamics equation:
 
 \[
 M(q)\ddot{q} + b(q, \dot{q}) = g(q) + \tau
 \].
 
 \noindent\textbf{Implementation.} We discretized the continuous-time problem, 
-and use the midpoint method for derivative approximation. 
+and use the central difference scheme for derivative approximation. 
 Pinocchio facilitated the computation of kinematic and dynamic quantities. 
 The optimization was carried out using the Levenberg-Marquardt algorithm implemented in the SciPy library, 
 chosen for its ease of integration with our Python-based pipeline. 
@@ -235,7 +234,7 @@ in~\cref{fig:free_fall_no_torque}.
     \label{fig:free_fall_no_torque}
 \end{figure}
 
-These inaccuracies are attributed to the midpoint approximation for velocities and accelerations, and potential undersampling, which 
+These inaccuracies are attributed to the central difference approximation for velocities and accelerations, and potential undersampling, which 
 introduces errors that the optimizer compensates for with non-zero torques.
 
 Incorporating torque regularization significantly improved the results. While the pose error marginally increased, it remained within a 

@@ -57,26 +57,28 @@ the human and object, while the control variables \(u \coloneqq (\tau_m^h, f_k, 
 at the \(K\) contact points. The contact state \(c\) represents the presence and locations of contacts throughout the video sequence. 
 
 It should be noted, although not explicitly stated in the paper, that in their implementation, the velocities (\(\dot{q}^h\) and \(\dot{q}^o\))
-are not directly used as variables. Instead, velocities are approximated using the backward finite difference scheme 
+are not directly used as variables. Instead, velocities are approximated using the backward difference scheme 
 \(\dot{q}_t = (q_t - q_{t - 1}) / \Delta t\).
 
 \noindent\textbf{Loss Functions.} The loss functions \(l^h\) for the human consists of the following components:
 
 \begin{itemize}
     \item 
-        \(l_{2D}\): A term ensuring 2D consistency by minimizing the error between the observed 2D joint positions given by OpenPose and 
-        their re-projections from the 3D estimates, using the camera projection matrix \(P_{\text{cam}}\). Outlier influence is mitigated 
+        \(l_{2D} = \sum_j \rho\left(p_j^{2D} - A_{\text{cam}}\left(p_j(q)\right)\right)\): A term ensuring 2D consistency by minimizing the error 
+        between the observed 2D joint positions \(p_j^{2D}\) given by OpenPose and 
+        their re-projections from the 3D estimates \(p_j(q)\), using the camera projection matrix \(A_{\text{cam}}\). Outlier influence is mitigated 
         by employing the Huber loss function \(\rho\).
     \item 
-        \(l_{3D}\): This loss ensures that the estimated 3D positions adhere closely to the HMR 3D references.
+        \(l_{3D} = \sum_j \rho\left(p_j^{3D} -p_j(q)\right)\): This loss ensures that the estimated 3D positions \(p_j(q)\) adhere closely to the
+         HMR 3D references \(p_j^{3D}\).
     \item 
-        \(l_{\text{pose}}^h\): A likelihood term for the human pose, encouraging plausible human poses through a Gaussian Mixture Model 
-        trained on motion capture data.
+        \(l_{\text{pose}}^h = -\log\left(p\left(q;\text{GMM}\right)\right)\): A likelihood term for the human pose, encouraging plausible human 
+        poses through a Gaussian Mixture Model (GMM) trained on motion capture data.
     \item
-        \(l_{\text{torque}}^h\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
+        \(l_{\text{torque}}^h = \|\tau_m^h\|^2\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
     \item 
-        Motion smoothness: Terms penalizing rapid movements or accelerations to align with the typically smooth human motion observed over 
-        the video frame rate.
+        \(l_{\text{smooth}} = \sum_{j} \|v_j(q, \dot{q})\|^2 + \|\alpha_j(q, \dot{q}, \ddot{q})\|^2\): Term penalizing rapid 3D velocities 
+        \(v_j(q, \dot{q})\) and accelerations \(\alpha_j(q, \dot{q}, \ddot{q})\) to align with the typically smooth human motion observed over the video frame rate.
     \item
         Force-related terms: These encompass additional forces and contact forces that were not the focus of further investigation in our 
         study.
@@ -96,7 +98,7 @@ governing movement.
 
 Other constraints, such as those related to contact, are not the focus of our study and thus are not elaborated upon here.
 
-\noindent\textbf{Implementation.} The authors approached the problem's solution by discretizing it and applying finite difference schemes 
+\noindent\textbf{Implementation.} The authors approached the problem's solution by discretizing it and applying backward difference scheme 
 for derivatives, specifically \(\dot{y}_t = (y_t - y_{t - 1}) / \Delta t\). The computation of kinematic and dynamic quantities was facilitated 
 by the Pinocchio library~\cite{carpentier2019pinocchio}. Optimization was performed using the Levenberg-Marquardt algorithm, within the Ceres 
 Solver~\cite{Agarwal_Ceres_Solver_2022}. Due to the limitations on the constraint's type in such solvers, the constraints were incorporated as 
