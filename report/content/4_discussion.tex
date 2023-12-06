@@ -8,6 +8,10 @@ the original study.
     \item \textbf{Method and Code Complexity:} The complexity of the approach, both in terms of the underlying methodology and the associated 
     codebase, poses significant barriers to replication and extension.
 
+    \item \textbf{Simplification of the Vision Pipeline:} The original study uses individual models for each joint in contact recognition
+    potentially leading to redundant feature extraction. A more streamlined and modern approach could employ a unified neural network to handle 
+    these tasks more efficiently. The same remark can be made on the object endpoint detection.
+
     \item \textbf{Challenging Loss Coefficient Tuning:} Fine-tuning the loss coefficients in the optimization problem presents a significant 
     challenge. The balance between data fidelity and regularization, especially concerning torques, requires careful calibration, which may 
     limit the method's generalizability to diverse datasets. 
