@@ -1,0 +1,30 @@
+\section{Discussion on the Paper}
+\label{sec:discussion}
+
+Our review and partial reimplementation of the work by~\citet{li2019estimating} have led us to several observations about 
+the original study.
+
+\begin{itemize}
+    \item \textbf{Method and Code Complexity:} The complexity of the approach, both in terms of the underlying methodology and the associated 
+    codebase, poses significant barriers to replication and extension.
+
+    \item \textbf{Challenging Loss Coefficient Tuning:} Fine-tuning the loss coefficients in the optimization problem presents a significant 
+    challenge. The balance between data fidelity and regularization, especially concerning torques, requires careful calibration, which may 
+    limit the method's generalizability to diverse datasets. 
+
+    \item \textbf{Confidence in Force and Torque Estimations:} Assessing the accuracy of reconstructed forces and torques is problematic due 
+    to the limited benchmarks available for validation.
+
+    \item \textbf{Consistency in Object Weight and Body Dimension Priors:} In their method, weights and weight matricies are predefined. 
+    But the movement heavily depends on the weight and dimensions of the manipulated object and the human body, which can vary significantly 
+    across different videos. 
+
+    \item \textbf{Relevance of Full Body Dynamics:} Given the necessary approximations in velocity and acceleration, and the inability to 
+    strictly enforce full-body dynamics, the added value of attempting to reconstruct these dynamics as opposed to focusing 
+    solely on kinematics can be questionned. A comparative analysis with kinematics-focused methods could be insightful.
+
+    \item \textbf{Lack of Data Adimensionality in Optimization:} The absence of adimensionalization or standardization in data processing could 
+    affect the model's ability to generalize. This issue becomes particularly evident in scenarios where similar movements are performed at 
+    different speeds, potentially leading to varied results.
+
+\end{itemize}
