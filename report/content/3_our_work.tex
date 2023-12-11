@@ -99,8 +99,7 @@ the Jacobian and perform forward kinematics (compute the 3D positions  $M(t)_{j}
 
 Devil is in the details, and we had to be careful about the following points while implementing:
 \begin{itemize}
-    \item We provide 2 tasks to the inverse kinematics solver: one for the elbow 3D position and one for the wrist 3D position. 
-    Order matters, elbow comes first.
+    \item We provide 2 tasks to the inverse kinematics solver: one for the elbow 3D position and one for the wrist 3D position.
     \item The mediapipe 3D estimations are not perfect but the most nottable issue is that 
     the upper arm and the forearm lengths are not constant across time. To overcome this limitation,
     3D positions are re-scaled to match the expected nominal model arm length. 
@@ -268,6 +267,30 @@ they demonstrate the optimizer's capability to reconstruct coherent torques.
     \includegraphics[width=8cm]{figures/free_fall_friction.png}
     \caption{Results of the optimization on the free fall with friction.}
     \label{fig:free_fall_friction}
+\end{figure}
+
+\noindent\textbf{Static Arm.} An intriguing test scenario is the static arm, where the arm is 
+maintained stationary in a plane parallel to the ground. The objective in this setup is to recover 
+the constant static torque that maintains the arm's position, given in~\cref{fig:static_gt}.
+
+This static test uncovers another limitation within the optimization framework. It introduces a 
+trade-off between the 3D consistency loss \(l_{3D}\) and the torque regularization 
+\(l_{\text{torque}}\). But if the torque is important, like in this case, this can result in 
+significant errors in both the estimated 
+position and the computed torque, as shown in~\cref{fig:static}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/static.png}
+    \caption{Simulated ground truth data of static arm.}
+    \label{fig:static_gt}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/static_result.png}
+    \caption{Results of the optimization on the static arm.}
+    \label{fig:static}
 \end{figure}
 
 

@@ -13,7 +13,7 @@ the original study.
     these tasks more efficiently. The same remark can be made on the object endpoint detection.
 
     \item \textbf{Challenging Loss Coefficient Tuning:} Fine-tuning the loss coefficients in the optimization problem presents a significant 
-    challenge. The balance between data fidelity and regularization, especially concerning torques, requires careful calibration, which may 
+    challenge. The balance between data fidelity and regularization, requires careful calibration, which may 
     limit the method's generalizability to diverse datasets. 
 
     \item \textbf{Confidence in Force and Torque Estimations:} Assessing the accuracy of reconstructed forces and torques is problematic due 
@@ -30,5 +30,11 @@ the original study.
     \item \textbf{Lack of Data Adimensionality in Optimization:} The absence of adimensionalization or standardization in data processing could 
     affect the model's ability to generalize. This issue becomes particularly evident in scenarios where similar movements are performed at 
     different speeds, potentially leading to varied results.
+
+    \item \textbf{Torque Regularization:} As discussed in~\cref{subsec:dynamic_results}, the use 
+    of \(l_{\text{torque}} = \|\tau_m\|^2\) as a regularization term can lead to suboptimal 
+    behavior, particularly in situations where the motion requires significant torques. 
+    A more appropriate regularization might be on the derivative of the torque, \(\dot{\tau}_m\), which 
+    would allow the model to accommodate necessary high torques while still smoothing the energy used in the movement.
 
 \end{itemize}
