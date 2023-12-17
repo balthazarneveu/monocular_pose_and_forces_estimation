@@ -65,9 +65,9 @@ are not direct optimization variables. Instead, velocities are approximated usin
 
 \begin{itemize}
     \item 
-        \(l_{2D} = \sum_j \rho\left(p_j^{2D} - A_{\text{cam}}\left(p_j(q)\right)\right)\): A term ensuring 2D consistency by minimizing the error 
+        \(l_{2D} = \sum_j \rho\left(p_j^{2D} - P_{\text{cam}}\left(p_j(q)\right)\right)\): A term ensuring 2D consistency by minimizing the error 
         between the observed 2D joint positions \(p_j^{2D}\) given by OpenPose and 
-        their re-projections from the 3D estimates \(p_j(q)\), using the camera projection matrix \(A_{\text{cam}}\). Outlier influence is mitigated 
+        their re-projections from the 3D estimates \(p_j(q)\), using the camera projection matrix \(P_{\text{cam}}\). Outlier influence is mitigated 
         by employing the Huber loss function \(\rho\).
     \item 
         \(l_{3D} = \sum_j \rho\left(p_j^{3D} -p_j(q)\right)\): This loss ensures that the estimated 3D positions \(p_j(q)\) adhere closely to the

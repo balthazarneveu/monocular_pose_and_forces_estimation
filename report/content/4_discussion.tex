@@ -8,16 +8,18 @@ the original study.
     \item \textbf{Method and Code Complexity:} The complexity of the approach, both in terms of the underlying methodology and the associated 
     codebase, poses significant barriers to replication and extension.
 
-    \item \textbf{Simplification of the Vision Pipeline:} The original study uses individual models for each joint in contact recognition
-    potentially leading to redundant feature extraction. A more streamlined and modern approach could employ a unified neural network to handle 
+    \item \textbf{Simplification of the Vision Pipeline:} The original study uses individual neural network models for each joint in contact recognition
+    potentially leading to redundant feature extraction. A more streamlined and modern approach could employ a unified neural network (backbone) to handle 
     these tasks more efficiently. The same remark can be made on the object endpoint detection.
 
     \item \textbf{Challenging Loss Coefficient Tuning:} Fine-tuning the loss coefficients in the optimization problem presents a significant 
     challenge. The balance between data fidelity and regularization, requires careful calibration, which may 
-    limit the method's generalizability to diverse datasets. 
+    limit the method's generalizability to diverse datasets. As there are no clear guidelines on how to tune these coefficients, one can
+    assume that the authors fine tuned them to get correct accuracy on the Parkour dataset used for the quantitative evaluation.
 
     \item \textbf{Confidence in Force and Torque Estimations:} Assessing the accuracy of reconstructed forces and torques is problematic due 
-    to the limited benchmarks available for validation.
+    to the limited benchmarks available for validation. The authors deserve credits for providing quantitative results (based on the Parkour dataset).
+    Getting ground truth data for these quantities is very challenging. Realistic simulations do not seem possible.
 
     \item \textbf{Consistency in Object Weight and Body Dimension Priors:} In their method, weights and weight matrices are predefined. 
     But the movement heavily depends on the weight and dimensions of the manipulated object and the human body, which can vary significantly 
@@ -30,11 +32,15 @@ the original study.
     \item \textbf{Lack of Data Adimensionality in Optimization:} The absence of adimensionalization or standardization in data processing could 
     affect the model's ability to generalize. This issue becomes particularly evident in scenarios where similar movements are performed at 
     different speeds, potentially leading to varied results.
+    One would naturally divide the 2D reprojection errors by the image diagonal size (in pixels), the 3D reprojection errors by the length of the arm,
+    the dynamics constraint (torque error) by the static torque of the arm at rest etc... 
+    The constants used to weight the cost terms would naturally become more consistent and easier to tune.
 
     \item \textbf{Torque Regularization:} As discussed in~\cref{subsec:dynamic_results}, the use 
     of \(l_{\text{torque}} = \|\tau_m\|^2\) as a regularization term can lead to suboptimal 
     behavior, particularly in situations where the motion requires significant torques. 
-    A more appropriate regularization might be on the derivative of the torque, \(\dot{\tau}_m\), which 
+    The simplest correction would be to penalize deviations from the torque obtained in a static configuration deduced from the current state \(l_{\text{torque}} = \|\tau_m - \tau_m^{\textrm{STATIC}} \|^2\).
+    Another more appropriate regularization might be on the derivative of the torque, \(\dot{\tau}_m\), which 
     would allow the model to accommodate necessary high torques while still smoothing the energy used in the movement.
 
 \end{itemize}

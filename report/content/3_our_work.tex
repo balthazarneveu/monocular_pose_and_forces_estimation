@@ -2,7 +2,8 @@
 \label{sec:remplementation}
 
 The code accompanying the orignial paper is rather difficult to use due to its inherent complexity and lack of documentation. 
-To effectively explore the core contributions of the paper, we decided to reimplement parts of it with a more focused scope.
+To effectively explore the core contributions of the paper, 
+we decided to reimplement parts of it from scratch with application to a simplified use case.
 
 In our approach, we focused on reconstructing arm motion from video data,
 a simplification that allowed us to tackle the fundamental 
@@ -18,14 +19,14 @@ Our simplification regarding the original paper are listed below:
     \subitem - We end up with the arm state $q$ being a quaternion describing 
     the upper arm state and a single elbow angle for the forearm state.
     \subitem - Shoulder is fixed to the world frame.
-    \item Do not deal with objects and external contact forces.
+    \item Do not deal with objects, ground and external contact forces.
     \item Act under controlled conditions.
     \subitem - A correct lighting and a static background to simplify the vision task.
     \subitem - We make sure that the camera is on a tripod and geometrically calibrated.
 \end{itemize}
 
-Regarding implementation, we started from scratch. Instead of trying to re-implement
-the whole inverse dynamics optimization framework at once, we progressively built a solution.
+Regarding implementation, we started from scratch and wrote Python code without focusing on execution time.
+Instead of trying to re-implement the whole inverse dynamics optimization framework at once, we progressively built a solution.
 Since the arm has only 4 degrees of freedom, leading to 3x 3D joints, 
 fitting the full camera parameters (extrinsics and intrinsics) at the same time
 as fitting the whole arm dynamics is not possible (under determined system).
@@ -49,7 +50,7 @@ we implemented a proof of concept for the inverse dynamics optimizer (\ref{subse
 \begin{itemize}
     \item minimizing $l_{\text{3D}}$ the 3D reprojection error of the arm joints.
     \item under relaxed dynamic constraint.
-    \item under smooth motion constraints (velocities and accelerations)
+    \item with smooth motion priors (velocities and accelerations) and minimal torque.
 \end{itemize}
 % WARNING: !!!!!!!!!!!! 
 
@@ -57,8 +58,8 @@ we implemented a proof of concept for the inverse dynamics optimizer (\ref{subse
 \subsection{Vision Pipeline}
 \label{subsec:vision_pipeline}
 
-For 2D and 3D human pose estimation, we utilized the MediaPipe framework~\cite{lugaresi2019mediapipe}, which offers a more modern alternative 
-to OpenPose. MediaPipe simplifies the vision pipeline by also replacing HMR in our usecase. An illustration of MediaPipe's inference results 
+For 2D and 3D human pose estimation, we used the MediaPipe framework~\cite{lugaresi2019mediapipe} which performs the two tasks at once at inference time.
+It offers a more modern alternative to ~\href{https://github.com/MattX20/pytorch-openpose}{our updated version} of Pytorch OpenPose. MediaPipe simplifies the vision pipeline by also replacing HMR 3D pose estimation in our usecase. An illustration of MediaPipe's inference results 
 can be seen in~\cref{fig:mediapipe}. We then only used the arm joint 2D and 3D positions. 
 
 \begin{figure}
@@ -72,7 +73,7 @@ can be seen in~\cref{fig:mediapipe}. We then only used the arm joint 2D and 3D p
     \label{fig:mediapipe}
 \end{figure}
 
-Although we experimented with the contact recognizer component, we did not use it into our pipeline since we do not model contact.
+Although we experimented with the contact recognizer component, we did not use it in our pipeline since we do not model contact.
 
 \subsection{Arm Model}
 \label{subsec:arm_model}
@@ -85,15 +86,16 @@ the arm are fixed with the forearm and upper arm lengths fixed at 27 cm and 23 c
 \begin{figure}
     \centering
     \includegraphics[width=0.3\textwidth]{figures/live_arm.png}
-    \caption{Arm Model vizualisation}
+    \caption{Arm Model visualisation}
     \label{fig:arm_model}
 \end{figure}
 
 \subsection{Inverse Kinematics}
 \label{subsec:inverse_kinematics}
 To get proper initializations to feed to the inverse dynamics optimizer, we relied on the 3D positions of the arm joints estimated by MediaPipe~\cite{lugaresi2019mediapipe}.
-From a sequence of 3D positions of the arm joints, we used the inverse kinematics approach to estimate the joint angles.
-Inverse kinematics is higly relying on the Pinocchio library ~\cite{carpentier2019pinocchio} to compute 
+From a sequence of 3D positions of the arm joints, we used the 
+~\href{https://github.com/balthazarneveu/monocular_pose_and_forces_estimation/blob/main/src/projectyl/dynamics/inverse_kinematics.py}{inverse kinematics approach} to estimate the joint angles.
+Inverse kinematics is highly relying on the Pinocchio library ~\cite{carpentier2019pinocchio} to compute 
 the Jacobian and perform forward kinematics (compute the 3D positions  $M(t)_{j}$ of the joints from the joint angles $q(t)$).
 % @TODO: Add equations for IK with the 2 tasks (elbow and wrist 3D positions)
 
@@ -102,11 +104,11 @@ Devil is in the details, and we had to be careful about the following points whi
     \item We provide 2 tasks to the inverse kinematics solver: one for the elbow 3D position and one for the wrist 3D position.
     \item The mediapipe 3D estimations are not perfect but the most nottable issue is that 
     the upper arm and the forearm lengths are not constant across time. To overcome this limitation,
-    3D positions are re-scaled to match the expected nominal model arm length. 
+    3D positions are re-scaled to match the expected nominal model arm length.
     This arm length normalization ensures that a solution exists but on the other hand, it may introduce reprojection errors.
 \end{itemize}
 Although nothing grants temporal smoothness of the estimated joint angles, we recursively feed the previous solution as an initial guess to the current timestep.
-This simple trick gives good results in practice (assessed qualitatively on the match between the moving arm and the video).
+This simple trick gives good results in practice (assessed qualitatively by the match between the reconstructed moving arm and the video).
 
 
 \subsection{Camera position}
@@ -116,16 +118,16 @@ This simple trick gives good results in practice (assessed qualitatively on the 
 the arm motion (at the shoulder level), moving the camera around the arm is equivalent to spinning the arm around itself. 
 Our simplification unfortunately leads to a degenerate problem where the camera rotation may end up being redundant with the arm rotation.
 To avoid this issue, we decided to fix the camera orientation. 
-We estimate the camera 3D position $P_{\text{cam}}(t)$ 
+We estimate the camera 3D position $T_{\text{cam}}(t)$ 
 by jointly minimizing the 2D reprojection error of joints.
-$$\underset{P_{\text{cam}}(t)}{min}\sum_{j\in{\text{shoulder, elbow, wrist}}} \|K\cdot\left[Q_{\text{cam}} | P_{\text{cam}}(t)\right] \vec{X}^{(j)}(t) - \vec{x}^{(j)}(t) \|^2$$
+$$\underset{T_{\text{cam}}(t)}{min}\sum_{j\in{\text{shoulder, elbow, wrist}}}\|K\cdot\left[Q_{\text{cam}} | T_{\text{cam}}(t)\right] \vec{P_{\textrm{3D}}}^{(j)}(t) - \vec{p_{\textrm{2D}}}^{(j)}(t) \|^2$$
 where
 \begin{itemize}
     \item $K$ is the camera 3x3 intrinsic matrix
     \item $Q$ is the camera orientation set to identity here $I_{3}$
-    \item $P_{\text{cam}}(t)$ is the 3D camera position in the world frame (meters)
-    \item $\vec{X}^{(j)}$ are the homogeneous 3D coordinates of joint $j$ (meters)
-    \item $\vec{x}^{(j)}$ are the homogeneous 2D coordinates of joint $j$ in the sensor frame (pixels).
+    \item $T_{\textrm{cam}}(t)$ is the 3D camera position in the world frame (meters)
+    \item $\vec{P_{\textrm{3D}}}^{(j)}$ are the homogeneous 3D coordinates of joint $j$ (meters)
+    \item $\vec{p_{\textrm{2D}}}^{(j)}$ are the homogeneous 2D coordinates of joint $j$ in the sensor frame (pixels).
 \end{itemize}
 
 \noindent\textbf{Camera calibration.} To reduce the number of degrees of freedom, we always used the same camera through all our tests and 
@@ -134,11 +136,11 @@ Please refer to~\cref{app:cam_calib} for more details.
 
 \noindent\textbf{Camera pose optimization.}
 Each timestep can be viewed as a separate optimization problem. We can also ensure better temporal coherence
-by adding a regularization term on the camera 3D position to the previous cost function $||\frac{\Delta P_{\text{cam}}}{\Delta{t}}||^2$.
-We perform a first quick pass using small windows of 2 second (60 frames) to initialize the camera position sequence.
+by adding a regularization term on the camera 3D position to the previous cost function $||\frac{\Delta T_{\text{cam}}}{\Delta{t}}||^2$.
+We perform a first quick pass using small windows of 2 second (60 frames) to initialize the camera position sequence (used for the poster session demo).
 In a second pass, we optimize over the whole sequence at once.
 Results are shown in~\cref{fig:camera_fitting}.
-A rule of thumb on a i7 - 8 core CPU is that this optimizer takes roughly 1 minute to optimize the camera pose a 1 minute long video.
+A rule of thumb on a i7 - 8 core CPU is that this optimizer goes at 30fps (takes roughly 1 minute to optimize the camera pose a 1 minute long video).
 
 \begin{figure}
     \centering
@@ -152,7 +154,7 @@ A rule of thumb on a i7 - 8 core CPU is that this optimizer takes roughly 1 minu
     \centering
     \includegraphics[width=16cm]{figures/arm_demo.png}
     \caption{Demo of the pose estimation pipeline.
-    Left: Digital twin of the arm is synchronized witht the GUI. Camera is indicated in pink.
+    Left: Digital twin of the arm is synchronized witg the GUI. Camera is indicated in pink.
     Right: graphical user interface to select a specific frame
     and visualize the 2D joints position (dashed - right curve) aswell as the 3D reprojection of the arm (plain - right curve).}
     \label{fig:demo}
@@ -193,11 +195,13 @@ excludes the pose likelihood term since we target only the arm. The remaining te
 
 Theses terms are the same than the corresponding ones in~\cref{subsec:reconstruct_original}.
 
-\noindent\textbf{Constraints.} The arm dynamics are governed by the Lagrange dynamics equation:
+\noindent\textbf{Constraints.} The arm dynamics are governed by the Lagrange dynamics equation,
+relaxed as an additional cost term.
 
 \[
-M(q)\ddot{q} + b(q, \dot{q}) = g(q) + \tau
-\].
+    \| \underbrace{M(q)\ddot{q} + b(q, \dot{q}) - g(q)}_{\textrm{Estimated torque from states $q$}} - \tau \|
+\]
+The computation of this term heavily relies on RNEA (Recursive Newton Euler algorithm) implemented in Pinocchio~\cite{carpentier2019pinocchio}.
 
 \noindent\textbf{Implementation.} We discretized the continuous-time problem, 
 and use the central difference scheme for derivative approximation. 
@@ -211,7 +215,7 @@ Constraint enforcement was achieved by embedding them as penalty terms within th
 
 Our initial tests of the optimizer were conducted on simulated data, enabling us to assess its performance and fine-tune the loss weights.
 
-\noindent\textbf{Free Fall, Simulated.} We began with a simple free-fall scenario. The arm's initial configuration was horizontal to the ground, with an elbow angle of 
+\noindent\textbf{Free Fall, Simulated.} We began with a simple free-fall scenario. The arm's initial configuration was horizontal, parallel to the ground, with an elbow angle of 
 \(\pi/4\) radians. This simulation was performed using the Runge–Kutta 2 method, and the resulting ground truth is depicted 
 in~\cref{fig:gt_free_fall}.
 
@@ -270,7 +274,7 @@ they demonstrate the optimizer's capability to reconstruct coherent torques.
 \end{figure}
 
 \noindent\textbf{Static Arm.} An intriguing test scenario is the static arm, where the arm is 
-maintained stationary in a plane parallel to the ground. The objective in this setup is to recover 
+maintained stationary in a plane parallel to the ground. The purpose of this setup is to recover 
 the constant static torque that maintains the arm's position, given in~\cref{fig:static_gt}.
 
 This static test uncovers another limitation within the optimization framework. It introduces a 
