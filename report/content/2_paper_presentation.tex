@@ -3,8 +3,9 @@
 
 The study by \citet{li2019estimating} aimed to reconstruct the 3D motion of a person interacting with an object, including the position 
 and applied forces, from a single RGB video. Their methodology unfolds in two principal steps. The first step involves the application of 
-computer vision techniques to accurately determine the human and object poses, as well as the points of contact between them and with the 
-surrounding environment. The second step solves an optimization problem, rooted in control theory principles, to fully recover 
+computer vision techniques to accurately determine the human and object poses. 
+Vision pipeline is also in charge of detecting whether or not certain specific joints are in contact with the object or the ground.
+The second step solves an optimization problem, rooted in control theory principles, to fully recover 
 the dynamic motion. The full pipeline can be visualized on~\cref{fig:original_pipeline}.
 
 \begin{figure*}
@@ -18,27 +19,27 @@ the dynamic motion. The full pipeline can be visualized on~\cref{fig:original_pi
 \subsection{Retrieve Human and Object 3D Pose and Contact from RGB Video}
 \label{subsec:retrieve_original}
 
-\noindent\textbf{Human 2D Pose Estimation.}\label{2dpose} For the task of human pose estimation, the authors utilized a pretrained version of 
-OpenPose~\cite{cao2017realtime}. This tool enabled them to identify and track human joint positions in two dimensions from the RGB video.
+\noindent\textbf{Human 2D Pose Estimation.}\label{2dpose} For the task of human pose estimation, the authors used a pretrained version of 
+OpenPose~\cite{cao2017realtime}. This tool allowed them to identify and track human joint positions in two dimensions from the RGB video.
 
 \noindent\textbf{Contact Recognition.} The recognition of contact points, being whether specific joints (like feet, hands, and neck) were in 
 contact with the ground or the object, was achieved by first cropping areas in the video frame around the joints identified by OpenPose. 
-These cropped images were then processed through the corresponding joint's ResNet \cite{he2016deep}, which had been trained on a custom dataset 
+These cropped images were then processed through the corresponding joint's ResNet \cite{he2016deep}, which had been fine tuned on a custom dataset 
 to discern contact.
 
-\noindent\textbf{Object 2D Endpoint Detection.} For estimating the 2D positions of object endpoints, the authors utilized instance segmentation 
+\noindent\textbf{Object 2D Endpoint Detection.} In order to estimate the 2D positions of object endpoints, the authors relied on instance segmentation 
 capabilities of Mask R-CNN \cite{he2017mask}. This method was applied to different classes of objects (such as barbells, hammers, scythes, 
-and spades) identified in their video dataset. Mask R-CNN, trained separately for each object class, enabled the extraction of segmentation masks
+and spades) identified in their video dataset. Training Mask R-CNN separately for each object class, enabled the extraction of segmentation masks
 and bounding boxes from the video frames. These were then used to estimate the 2D locations of the object's endpoints.
 
-\noindent\textbf{Human 3D Pose Estimation.} The authors also utilized HMR~\cite{kanazawa2018end} for 3D human pose estimation, although this 
+\noindent\textbf{Human 3D Pose Estimation.} The authors also used HMR (Human Mesh Recovery) ~\cite{kanazawa2018end} for 3D human pose estimation, although this 
 is not clearly stated in their method overview.
 
 
 \subsection{Reconstruct Person-Object Dynamic Motion}
 \label{subsec:reconstruct_original}
 
-The optimization framework presented by \citet{li2019estimating} is designed to estimate the 3D trajectories of both the human and the object, 
+The optimization framework presented by \citet{li2019estimating} is designed to estimate the 3D trajectories of both the human ($h$) and the object ($o$), 
 as well as the applied contact forces, by solving the following trajectory optimization problem: 
 
 \begin{equation*}
@@ -56,8 +57,8 @@ as well as the applied contact forces, by solving the following trajectory optim
 the human and object, while the control variables \(u \coloneqq (\tau_m^h, f_k, k=1, \dots, K)\) include the muscle torques and contact forces 
 at the \(K\) contact points. The contact state \(c\) represents the presence and locations of contacts throughout the video sequence. 
 
-It should be noted, although not explicitly stated in the paper, that in their implementation, the velocities (\(\dot{q}^h\) and \(\dot{q}^o\))
-are not directly used as variables. Instead, velocities are approximated using the backward difference scheme 
+Although not explicitly stated in the paper, it should be noted that in their implementation, the velocities (\(\dot{q}^h\) and \(\dot{q}^o\))
+are not direct optimization variables. Instead, velocities are approximated using the backward difference scheme 
 \(\dot{q}_t = (q_t - q_{t - 1}) / \Delta t\).
 
 \noindent\textbf{Loss Functions.} The loss functions \(l^h\) for the human consists of the following components:
@@ -77,8 +78,8 @@ are not directly used as variables. Instead, velocities are approximated using t
     \item
         \(l_{\text{torque}}^h = \|\tau_m^h\|^2\): A regularization term penalizing high muscle torque values to favor energy-efficient movements.
     \item 
-        \(l_{\text{smooth}} = \sum_{j} \|v_j(q, \dot{q})\|^2 + \|\alpha_j(q, \dot{q}, \ddot{q})\|^2\): Term penalizing rapid 3D velocities 
-        \(v_j(q, \dot{q})\) and accelerations \(\alpha_j(q, \dot{q}, \ddot{q})\) to align with the typically smooth human motion observed over the video frame rate.
+        \(l_{\text{smooth}} = \sum_{j} \|v_j(q, \dot{q})\|^2 + \|\alpha_j(q, \dot{q}, \ddot{q})\|^2\): Term penalizing fast 3D linear velocities 
+        \(v_j(q, \dot{q})\) and linear accelerations \(\alpha_j(q, \dot{q}, \ddot{q})\). This term encourages smooth joint trajectories.
     \item
         Force-related terms: These encompass additional forces and contact forces that were not the focus of further investigation in our 
         study.
