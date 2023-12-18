@@ -1,6 +1,6 @@
 import numpy as np
 
-from pinocchio import RobotWrapper, SE3, Model, Inertia, JointModelFreeFlyer, JointModelSpherical, JointModelRY, GeometryModel, GeometryObject, Frame, FrameType
+from pinocchio import RobotWrapper, SE3, Model, Inertia, JointModelSpherical, JointModelRY, JointModelRUBY, GeometryModel, GeometryObject, Frame, FrameType
 from pinocchio.utils import rotate
 from hppfcl import Cylinder, Sphere
 from projectyl.utils.properties import SHOULDER, ELBOW, WRIST
@@ -95,7 +95,7 @@ class ArmRobot(RobotWrapper):
 
         # Add elbow joint (revolute) to model
         if free_elbow:
-            elbow_joint = JointModelSpherical()
+            elbow_joint = JointModelRUBY()
             elbow_joint_id = model.addJoint(
                 shoulder_joint_id,
                 elbow_joint,
