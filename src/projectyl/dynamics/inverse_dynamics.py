@@ -103,7 +103,19 @@ def get_3D_pose_velocity_acceleration(
     return data_pos3D, velocity, acceleration
 
 
-def get_velocity_acceleration(tq, T, DT, arm_robot: ArmRobot) -> Tuple[np.ndarray, np.ndarray]:
+def get_velocity_acceleration(tq: np.ndarray, T: int, DT: float, arm_robot: ArmRobot) -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve angular velocity and acceleration from joint angles.
+    Use centered finite differences
+
+    Args:
+        tq (np.ndarray): Array of joint angles.
+        T (int): total number of samples
+        DT (float): timestep
+        arm_robot (ArmRobot): Robot arm mode
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: tvq, taq: angular velocity and acceleration
+    """
     nv = arm_robot.model.nv
     tvq = np.empty((T - 2, nv))
     # nv=4
@@ -140,7 +152,7 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
     shoulder_quaternion_normalized = shoulder_quaternion_unnormalized / shoulder_quaternion_norm
 
     # Normalize elbow
-    if nq ==6:
+    if nq == 6:
         elbow_angle_unnormalized = tq_unnormalized[:, 4:].reshape(T, 2)
 
         elbow_angle_norm = np.linalg.norm(
@@ -151,7 +163,7 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
 
         elbow_angle_normalized = elbow_angle_unnormalized / elbow_angle_norm
     elif nq == 5:
-        elbow_angle_normalized = tq_unnormalized[:, 4:]      
+        elbow_angle_normalized = tq_unnormalized[:, 4:]
 
     tq = np.concatenate(
         (
