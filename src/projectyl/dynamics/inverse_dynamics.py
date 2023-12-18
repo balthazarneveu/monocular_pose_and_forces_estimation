@@ -140,15 +140,18 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
     shoulder_quaternion_normalized = shoulder_quaternion_unnormalized / shoulder_quaternion_norm
 
     # Normalize elbow
-    elbow_angle_unnormalized = tq_unnormalized[:, 4:].reshape(T, 2)
+    if nq ==6:
+        elbow_angle_unnormalized = tq_unnormalized[:, 4:].reshape(T, 2)
 
-    elbow_angle_norm = np.linalg.norm(
-        elbow_angle_unnormalized,
-        axis=1,
-        keepdims=True
-    )
+        elbow_angle_norm = np.linalg.norm(
+            elbow_angle_unnormalized,
+            axis=1,
+            keepdims=True
+        )
 
-    elbow_angle_normalized = elbow_angle_unnormalized / elbow_angle_norm
+        elbow_angle_normalized = elbow_angle_unnormalized / elbow_angle_norm
+    elif nq == 5:
+        elbow_angle_normalized = tq_unnormalized[:, 4:]      
 
     tq = np.concatenate(
         (
