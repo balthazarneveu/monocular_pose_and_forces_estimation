@@ -20,3 +20,53 @@ But since we're using a FullHD video mode with a crop factor of around 15\% on e
 it is needed to rescale the focal length acordingly $f_{\text{pix}}^{\text{video}} = 2666px * 1.3 * \frac{1920px}{4000px} \approx 1664px$.
 Calibration method provides a estimated focal length of $1690px$ which is close enough to the specifications.
 We assume the camera to be a pinhole and neglect radial distortion.
+
+
+\subsection{Code description}
+\label{app:code}
+The code is available at:
+
+~\href{https://github.com/balthazarneveu/monocular_pose_and_forces_estimation}{github.com/balthazarneveu/monocular\_pose\_and\_forces\_estimation}
+
+The code is written in Python and relies on a several external libraries:
+\begin{itemize}
+    \item Pinocchio for kinematics and dynamics computations aswell as the arm model.
+    \item Meshcat for 3D visualization.
+    \item OpenCV for the camera calibration and the image processing.
+    \item MoviePy wraps video processing.
+    \item ~\href{https://developers.google.com/mediapipe}{Google Mediapipe} for 2D and  3D pose estimation.
+    \item Scipy for the Levenberg-Marquardt optimization.
+    \item ~\href{https://github.com/emmcb/batch-processing}{batch-processing} to process multiple video files in a systematic way.
+    \item ~\href{https://github.com/balthazarneveu/interactive_pipe}{interactive-pipe} to display a GUI with graphs and images and interact with sliders and keyboard.
+    This library works with Matplotlib as the default graphical backend but PyQT/PySide is highly recommended for the demo.
+\end{itemize}
+
+To process a new set of videos, located in the \texttt{data} folder, run the following command:
+\begin{verbatim}
+    python scripts/batch_video_processing.py
+    -i "data/*.mp4"
+    -o "out"
+    -A demo
+\end{verbatim}
+\textit{When the GUI pops up, press F1 to get the help menu to learn about the shortcuts. Press F11 to display in full screen.
+Do not forget to click the hyperlink in the terminal to open the MeshCat viewer in your browser.}
+
+
+If you're using a different camera, you'll need to calibrate your camera intrinsics first.
+Capture a calibration video sequence using a 10x7 checkerboard (print it and stick it on a cardboard or display it on your screen).
+
+\begin{verbatim}
+    python scripts/batch_video_processing.py
+    -i "data/camera_calibration_<cam_id>.mp4"
+    -o "calibration"
+    -A camera_calibration
+\end{verbatim}
+
+Then you'll be able to process your pose videos using the new camera intrinsics, by simply specifiying
+the calibration file path:
+\begin{verbatim}
+    -calib "calibration/camera_calibration_<cam_id>.yaml"
+\end{verbatim}
+
+The core of the code for inverse kinematics and inverse dynamics is located in:
+~\href{https://github.com/balthazarneveu/monocular_pose_and_forces_estimation/tree/main/src/projectyl/dynamics}{src/projectyl/dynamics}
