@@ -99,7 +99,7 @@ def interactive_replay_sequence(q_dict, viz):
     interactive_pipeline(safe_input_buffer_deepcopy=False)(replay_sequence)(q_dict, viz)
 
 
-def plot_optimization_curves(states_to_plot: list, mode: str = "qvt", title: str = "Optimization problem"):
+def plot_optimization_curves(states_to_plot: list, mode: str = "qt", title: str = "Optimization problem"):
     n_fig = len(mode)
     fig, axs = plt.subplots(1, n_fig, figsize=(n_fig*5, 5))
     if n_fig == 1:
@@ -113,19 +113,12 @@ def plot_optimization_curves(states_to_plot: list, mode: str = "qvt", title: str
                 ax.plot(state[:, 0+dim], style+FROZEN_COLOR_CODE[dim],
                         label=f"q shoulder {label} {dim}")  # skip index 3 (quaternion normalization)
             ax.plot(state[:, 4], style+FROZEN_COLOR_CODE[3], label=f"q elbow {label}")
-            ax.set_title("Q state [rad] (?)")
-            graph_id += 1
-        if "v" in mode:
-            ax = axs[graph_id]
-            for dim in range(3):
-                ax.plot(state[:, 4+1+dim], style+FROZEN_COLOR_CODE[dim], label=f"q' shoulder {label} {dim}")
-            ax.plot(state[:, 4+3+1], style+FROZEN_COLOR_CODE[3], label=f"q' elbow {label}")
-            ax.set_title("Velocity [rad/s] (?)")
+            ax.set_title("Q state")
             graph_id += 1
         if "t" in mode:
             ax = axs[graph_id]
             for dim in range(3):
-                ax.plot(state[:, 4+3+2+dim], style+FROZEN_COLOR_CODE[dim],
+                ax.plot(state[:, 5+dim], style+FROZEN_COLOR_CODE[dim],
                         label=f"Torque shoulder {label} {dim}")
             ax.set_title("Torque")
             ax.plot(state[:, -1], style+FROZEN_COLOR_CODE[3], label=f"Torque elbow {label}")
