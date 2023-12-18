@@ -66,7 +66,10 @@ def build_simulation(
     """
     # Set initial conditions
     q = arm_robot.q0.copy()
-    q[4:] = np.sqrt(2) / 2
+    if arm_robot.free_elbow:
+        q[4:] = np.sqrt(2) / 2
+    else:
+        q[4] = np.pi / 4
     vq = np.zeros(arm_robot.model.nv)
     aq = np.zeros(arm_robot.model.nv)
     np.random.seed(42)  # For reproducibility
@@ -112,6 +115,6 @@ def build_simulation(
         gt_wrist_p.append(wrist_p.copy())
 
         q, vq = rk2_step(arm_robot, q, vq, tauq, DT)
-        tauq *= friction_coefficient  # Friction
+        tauq = -friction_coefficient*vq # Free fall with friction
     return (gt_q, gt_vq, gt_aq, gt_tauq,
             gt_shoulder_p, gt_elbow_p, gt_wrist_p)

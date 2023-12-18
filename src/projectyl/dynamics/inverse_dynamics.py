@@ -200,9 +200,9 @@ def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False) -> np.nd
 
     res = np.concatenate([
         (res_p),
-        0.6 * tv,
-        0.6 * ta,
-        0.6 * ttauq,
+        0.0 * tv,
+        0.0 * ta,
+        0.01 * ttauq,
         2 * (ttau - ttauq),
     ])
 
