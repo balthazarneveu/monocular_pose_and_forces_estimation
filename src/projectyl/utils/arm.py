@@ -125,10 +125,10 @@ def plot_optimization_curves(states_to_plot: list, mode: str = "qvt", title: str
         if "t" in mode:
             ax = axs[graph_id]
             for dim in range(3):
-                ax.plot(state[:, 4+3+1+dim], style+FROZEN_COLOR_CODE[dim],
+                ax.plot(state[:, 4+3+2+dim], style+FROZEN_COLOR_CODE[dim],
                         label=f"Torque shoulder {label} {dim}")
             ax.set_title("Torque")
-            ax.plot(state[:, 4+3+1], style+FROZEN_COLOR_CODE[3], label=f"Torque elbow {label}")
+            ax.plot(state[:, -1], style+FROZEN_COLOR_CODE[3], label=f"Torque elbow {label}")
             graph_id += 1
     for i in range(len(axs)):
         axs[i].legend()
