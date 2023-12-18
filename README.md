@@ -204,9 +204,14 @@ It is no totally unexpected to have such an error:
 
 ## :gift: Extra
 
+In case you'd like to dig in the original author's implementation, we provide a functional fork of [Pytorch OpenPose](https://github.com/MattX20/pytorch-openpose) which allows batch processing on videos.
+
+
 Initially, we had plans to measure groundtruth velocity by retrieving the trajectory of a ball thrown by the hand.
+
 - We did a few experiments with SAM [Segment anything](https://segment-anything.com/) which is wrapped in the library to select the ball.
 - We also have a CERES C++ ultra basic optimizer to fit the parabola of a ball in free fall.
+
 
 ### CERES setup
 ```bash
