@@ -13,7 +13,18 @@ Our code is available and documented on~\href{https://github.com/balthazarneveu/
 
 \subsection{Overview}
 \label{subsec:overview}
-Our simplification regarding the original paper are listed below:
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{figures/simplification_overview.png}
+    \caption{
+    Simplified problem overview.
+    }
+    \label{fig:simplified_setup}
+\end{figure}
+
+Our simplifications (depicted in ~\cref{fig:simplified_setup}) regarding the original paper are listed below:
 \begin{itemize}
     \item Only the arm motion (shoulder, elbow and wrist) is considered and not the full body.
     \subitem - We end up with the arm state $q$ being a quaternion describing 
@@ -24,6 +35,7 @@ Our simplification regarding the original paper are listed below:
     \subitem - A correct lighting and a static background to simplify the vision task.
     \subitem - We make sure that the camera is on a tripod and geometrically calibrated.
 \end{itemize}
+
 
 Regarding implementation, we started from scratch and wrote Python code without focusing on execution time.
 Instead of trying to re-implement the whole inverse dynamics optimization framework at once, we progressively built a solution.
@@ -124,7 +136,7 @@ $$\underset{T_{\text{cam}}(t)}{min}\sum_{j\in{\text{shoulder, elbow, wrist}}}\|K
 where
 \begin{itemize}
     \item $K$ is the camera 3x3 intrinsic matrix
-    \item $Q$ is the camera orientation set to identity here $I_{3}$
+    \item $Q_{\textrm{cam}}$ is the camera orientation set to identity here $I_{3}$
     \item $T_{\textrm{cam}}(t)$ is the 3D camera position in the world frame (meters)
     \item $\vec{P_{\textrm{3D}}}^{(j)}$ are the homogeneous 3D coordinates of joint $j$ (meters)
     \item $\vec{p_{\textrm{2D}}}^{(j)}$ are the homogeneous 2D coordinates of joint $j$ in the sensor frame (pixels).

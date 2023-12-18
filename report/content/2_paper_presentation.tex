@@ -5,8 +5,9 @@ The study by \citet{li2019estimating} aimed to reconstruct the 3D motion of a pe
 and applied forces, from a single RGB video. Their methodology unfolds in two principal steps. The first step involves the application of 
 computer vision techniques to accurately determine the human and object poses. 
 Vision pipeline is also in charge of detecting whether or not certain specific joints are in contact with the object or the ground.
-The second step solves an optimization problem, rooted in control theory principles, to fully recover 
-the dynamic motion. The full pipeline can be visualized on~\cref{fig:original_pipeline}.
+The second step solves an optimization problem, rooted in control theory principles, to fully recover the dynamic motion. 
+The full pipeline can be visualized on~\cref{fig:original_pipeline}.
+
 
 \begin{figure*}
     \centering
@@ -16,8 +17,11 @@ the dynamic motion. The full pipeline can be visualized on~\cref{fig:original_pi
 \end{figure*}
 
 
+
 \subsection{Retrieve Human and Object 3D Pose and Contact from RGB Video}
 \label{subsec:retrieve_original}
+
+
 
 \noindent\textbf{Human 2D Pose Estimation.}\label{2dpose} For the task of human pose estimation, the authors used a pretrained version of 
 OpenPose~\cite{cao2017realtime}. This tool allowed them to identify and track human joint positions in two dimensions from the RGB video.
@@ -39,6 +43,16 @@ is not clearly stated in their method overview.
 \subsection{Reconstruct Person-Object Dynamic Motion}
 \label{subsec:reconstruct_original}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=8cm]{figures/original_model_overview.png}
+    \caption{Retrieving full body dynamics (muscle torques $\tau$ and external forces $F_{k}$ from 2D and 3D pose observations extracted from the video.
+    Configuration state $q$ of the body determines the 3D joints positions $p^{\textrm{3D}}$ which are projected as $p^{\text{2D}}$ on the pinhole camera sensor plane. The red dashed arrow illustrates that the distance between the object and the hand shall be minimized to statisfy the contact constraint $\kappa$.
+    }
+    \label{fig:original_model_overview}
+\end{figure}
+
+
 The optimization framework presented by \citet{li2019estimating} is designed to estimate the 3D trajectories of both the human ($h$) and the object ($o$), 
 as well as the applied contact forces, by solving the following trajectory optimization problem: 
 
@@ -53,15 +67,20 @@ as well as the applied contact forces, by solving the following trajectory optim
     \end{aligned}
 \end{equation*}
 
+
+
 \noindent\textbf{Variables.} The state variables \(x \coloneqq (q^h, q^o, \dot{q}^h, \dot{q}^o)\) encompass the configuration and velocities of 
 the human and object, while the control variables \(u \coloneqq (\tau_m^h, f_k, k=1, \dots, K)\) include the muscle torques and contact forces 
 at the \(K\) contact points. The contact state \(c\) represents the presence and locations of contacts throughout the video sequence. 
+
 
 Although not explicitly stated in the paper, it should be noted that in their implementation, the velocities (\(\dot{q}^h\) and \(\dot{q}^o\))
 are not direct optimization variables. Instead, velocities are approximated using the backward difference scheme 
 \(\dot{q}_t = (q_t - q_{t - 1}) / \Delta t\).
 
+
 \noindent\textbf{Loss Functions.} The loss functions \(l^h\) for the human consists of the following components:
+
 
 \begin{itemize}
     \item 
@@ -104,3 +123,5 @@ for derivatives, specifically \(\dot{y}_t = (y_t - y_{t - 1}) / \Delta t\). The 
 by the Pinocchio library~\cite{carpentier2019pinocchio}. Optimization was performed using the Levenberg-Marquardt algorithm, within the Ceres 
 Solver~\cite{Agarwal_Ceres_Solver_2022}. Due to the limitations on the constraint's type in such solvers, the constraints were incorporated as 
 penalty terms in the objective function.
+
+
