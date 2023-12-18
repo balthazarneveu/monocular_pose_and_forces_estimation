@@ -46,8 +46,8 @@ def rk2_step(
 
 def build_simulation(
     arm_robot: ArmRobot,
-    DT: float = 1e-2,
     T: int = 30,
+    DT: float = 1e-2,
     friction_coefficient: float = 0.1,
     initial_torque_modulation: float = 0.0
 ) -> Tuple[list, list, list, list, list, list, list]:
@@ -55,12 +55,12 @@ def build_simulation(
 
     Args:
         arm_robot (ArmRobot): Arm robot model
-        DT (float, optional): time interval. Defaults to 1e-2.
         T (int, optional): Total duration (in intervals). Defaults to 30.
+        DT (float, optional): time interval. Defaults to 1e-2.
         friction_coefficient (float, optional): Friction coefficient. Defaults to 0.1.
         initial_torque_modulation (float, optional): Initial torque modulation. Defaults to 0.0.
     Returns:
-        Tuple[list, list, list, list, list, list, list]: 
+        Tuple[list, list, list, list, list, list, list]:
         gt_q, gt_vq, gt_aq, gt_tauq,
         gt_shoulder_p, gt_elbow_p, gt_wrist_p
     """
