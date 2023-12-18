@@ -122,7 +122,9 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
 
     # [ q1 , q2 ,   q3  ,                       , qT-1, qT ]
     # [ -  , -  , tauq_3, tauq_4, ..., tauq_T-2 ,  -  , -  ]
-    tq_unnormalized = var[:T * nq].reshape(T, nq)  # tq =[q_1, q_2, ..., q_T]
+    tq_unnormalized = var[:T * nq]
+    tq_unnormalized = tq_unnormalized.reshape(T, nq)
+    # tq =[q_1, q_2, ..., q_T]
     ttauq = var[T * nq:]  # ttauq = [tauq_3, tauq_4, ..., tauq_T-2]
 
     # Get tq
@@ -162,12 +164,13 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
 
 # Build the cost function
 def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False) -> np.ndarray:
-    nv = arm_robot.model.nv
+    if debug:
+        print(f"{T}, {DT}, var = {var.shape}, observed_p = {observed_p.shape}")
     nq = arm_robot.model.nq
     tq, ttauq = process_var(var, T, nq)
-    tvq, taq = get_velocity_acceleration(tq, T, nv, DT)
-    tp, tv, ta = get_3D_pose_velocity_acceleration(tq, T, DT)
-    ttau = full_body_dynamics(tq, tvq, taq, T, nv)
+    tvq, taq = get_velocity_acceleration(tq, T, DT, arm_robot)
+    tp, tv, ta = get_3D_pose_velocity_acceleration(tq, T, DT, arm_robot)
+    ttau = full_body_dynamics(tq, tvq, taq, T, arm_robot)
 
     if debug:
         print("Diff between 3D pose :", np.linalg.norm(observed_p - tp))
