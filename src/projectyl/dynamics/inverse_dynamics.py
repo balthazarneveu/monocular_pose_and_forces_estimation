@@ -158,3 +158,34 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
     assert tq.shape == tq_unnormalized.shape
 
     return tq, ttauq
+
+
+# Build the cost function
+def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False) -> np.ndarray:
+    nv = arm_robot.model.nv
+    nq = arm_robot.model.nq
+    tq, ttauq = process_var(var, T, nq)
+    tvq, taq = get_velocity_acceleration(tq, T, nv, DT)
+    tp, tv, ta = get_3D_pose_velocity_acceleration(tq, T, DT)
+    ttau = full_body_dynamics(tq, tvq, taq, T, nv)
+
+    if debug:
+        print("Diff between 3D pose :", np.linalg.norm(observed_p - tp))
+        print("Smooth velocity :", np.linalg.norm(tv))
+        print("Smooth acceleration :", np.linalg.norm(ta))
+        print("Smooth torque :", np.linalg.norm(ttauq))
+        print("Dynamics :", np.linalg.norm(ttau - ttauq))
+
+    res_p = observed_p - tp
+    mask_p = np.abs(res_p) > 1
+    res_p[mask_p] = 2 * np.sqrt(np.abs(res_p[mask_p])) - 1
+
+    res = np.concatenate([
+        (res_p),
+        0.6 * tv,
+        0.6 * ta,
+        0.6 * ttauq,
+        2 * (ttau - ttauq),
+    ])
+
+    return res
