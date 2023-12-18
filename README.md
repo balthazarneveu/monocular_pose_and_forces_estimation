@@ -1,28 +1,52 @@
 # Monocular joint pose and forces estimation
-Review of the paper Estimating 3D Motion and Forces of Person-Object Interactions from Monocular Video
-- [Original Paper](https://openaccess.thecvf.com/content_CVPR_2019/papers/Li_Estimating_3D_Motion_and_Forces_of_Person-Object_Interactions_From_Monocular_CVPR_2019_paper.pdf) 
-- [Author's code](https://github.com/zongmianli/Estimating-3D-Motion-Forces)
-
-
-
 ### Context
- 
+
+Review of the CVPR 2019 paper [Estimating 3D Motion and Forces of Person-Object Interactions from Monocular Video](https://openaccess.thecvf.com/content_CVPR_2019/papers/Li_Estimating_3D_Motion_and_Forces_of_Person-Object_Interactions_From_Monocular_CVPR_2019_paper.pdf) 
+
 - Program: [MVA Master's degree](https://www.master-mva.com/) class on [Robotics](https://scaron.info/robotics-mva/). ENS Paris-Saclay.
 - Authors:
     - [Balthazar Neveu](https://github.com/balthazarneveu)
     - [Matthieu Dinot](https://github.com/mattx20)
 
-:scroll: [Poster](/poster/poster_robotics_neveu_dinot.pdf)
+
+# :clipboard: [Technical report](/report/report.pdf)
+
+# :scroll: [Poster](/poster/poster_robotics_neveu_dinot.pdf)
+
+
+![](/report/figures/method_illustration.png)
+
+
+
+
 
 ### Summary
-The original paper estimates 3D poses and internal torques / external forces applied on a human interacting with a tool.
-The goal behind this paper is to collect the dynamics of human menial activities from standard videos (including educational tutorials) to later enable behavior cloning on real robots. 
+#### Original paper's approach
+
+| [Author's code](https://github.com/zongmianli/Estimating-3D-Motion-Forces) | [Original Paper](https://openaccess.thecvf.com/content_CVPR_2019/papers/Li_Estimating_3D_Motion_and_Forces_of_Person-Object_Interactions_From_Monocular_CVPR_2019_paper.pdf)  |
+|:-------:|:-------:|
+|![](/report/figures/method_overview_illustration.png) | The original paper estimates 3D poses and internal torques / external forces applied on a human interacting with a tool. The goal behind this paper is to collect the dynamics of human menial activities from standard videos (including educational tutorials) to later enable behavior cloning on real robots. |
+
+
+
+
+|                                                                                                   Pipeline overview                                                                                                   | Inverse dynamics |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| ![](/report/figures/authors_original_pipeline.png)  Multi-staged vision leads to human (2D & 3D) and object pose estimations aswell as contact prediction. | ![](/report/figures/inverse_dynamisc_equations.png) $q$ configuration states, $\tau$ muscle torques, $F$ external forces applied by the object (or ground) on the human, $\kappa$ denotes contact related constraints |
+
+
+--------------
+#### Our simplified setup
+
+![](/report/figures/simplifications_logo.png)
 
 For simplification reasons, we studied a much simple problem making the following assumptions
 - :hammer::x: : no external objects or tools
 - :muscle: a single arm, not the full body.
 - :camera: the camera is assumed calibrated and standing on a tripod.
 
+
+### Video pipeline : inverse kinematics
 The current code is able to batch process videos and performs:
 - 2D pose and 3D pose estimation using Mediapipe (off the shelf)
   - RGB video :arrow_right: 3D & 2D joint positions
@@ -31,7 +55,15 @@ The current code is able to batch process videos and performs:
 - fits a camera pose in order to minimize 2d reprojection error
   - 2D points & 3D points from forward kinematics :arrow_right: Sequence of extrinsics matrices (just a 3D translation)
 
+### Dynamics: simulations
+We mostly did validate the inverse dynamics optimizer on simulations.
 
+|Free fall | Free fall + friction|
+|:-------:|:-------:|
+|![](/report/figures/free_fall.gif) | ![](/report/figures/free_fall_friction.gif) |
+
+
+#### Known limitations
 There are still many missing points:
 - We do not minimize the 2D reprojection error while performing Inverse Kinematics
 - :muscle:  Many attempts have been made in order to reproduce the dynamics optimizer in order to recover the torques (shoulder and elbow). This is part of an extra notebook.
@@ -78,19 +110,20 @@ python scripts/batch_video_processing.py -i "data/*.mp4" -o __out -A demo
 ------
 
 ## Modelization
-
 |                Pose estimation                 |                 Arm model                  |
 | :--------------------------------------------: | :----------------------------------------: |
 | ![](/report/figures/pose_estimation_gui_2.png) | ![](/report/figures/live_arm_vertical.png) |
 | :statue_of_liberty:  pose estimated from video |    :wrench: Synchronized "Digital twin"    |
 
 
-color code for joints:
-- :red_circle: shoulder
-- :green_circle: elbow
-- :large_blue_circle: wrist 
-- limbs: :green_circle: upper-arm 
-- :large_blue_circle: forearm
+Color code:
+- joints:
+  - :red_circle: shoulder
+  - :green_circle: elbow
+  - :large_blue_circle: wrist 
+- limbs:
+  - :green_square: upper-arm 
+  - :blue_square: forearm
 
 ### Pose estimation
 Using [Google Mediapipe](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), we're able to retrieve
@@ -129,6 +162,9 @@ Based on a frame by frame estimation (initalized from previous estimation), we'r
 --------
 
 ### Projecting the arm into the camera plane
+
+![](/report/figures/simplification_overview.png)
+
 |                     Camera                     |               World                |
 | :--------------------------------------------: | :--------------------------------: |
 | ![](/report/figures/arm_camera_projection.png) | ![](/report/figures/arm_world.png) |
@@ -139,7 +175,7 @@ Based on a frame by frame estimation (initalized from previous estimation), we'r
 From a video, shoot a 7x10 checkerboard in multiple orientations.
 Use the [Zhang method](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr98-71.pdf)
 ```bash
-python scripts/batch_video_processing.py -i "data/*cam*calib*.mp4" -o __out -A camera_calibration
+python scripts/batch_video_processing.py -i "data/*cam*calib*.mp4" -o calibration -A camera_calibration
 ```
 ![camera_calibration](/report/figures/camera_calibration.gif)
 
@@ -150,7 +186,7 @@ A least-square optimizer is used in order to estimate the camera translation wit
 We ensure smoothness on camera/shoulder translation.
 
 
-$min_{t_{\text{camera}}}||K [Q_{\text{camera}}, t_{\text{camera}}]. \vec{X} - \vec{x}||^2 + ||\frac{\Delta t_{\text{camera}}}{\Delta{t}}||^2$
+$min_{t_{\text{camera}}}||K [Q_{\text{camera}}, T_{\text{camera}}]. \vec{P^{\textrm{3D}}} - \vec{p^{\textrm{2D}}}||^2 + ||\frac{\Delta T_{\text{camera}}}{\Delta{t}}||^2$
 
 In our simplified model, since the shoulder can fully rotated, we freeze camera the rotation $Q_{\text{camera}}=I_{3}$ and only optimize on translation.
 
@@ -164,15 +200,14 @@ It is no totally unexpected to have such an error:
 
 
 
-### Next step
-Estimate inverse dynamics of the system and regularize.
-- velocities
-- torque
-
-
 -----
 
-## Extra
+## :gift: Extra
+
+Initially, we had plans to measure groundtruth velocity by retrieving the trajectory of a ball thrown by the hand.
+- We did a few experiments with SAM [Segment anything](https://segment-anything.com/) which is wrapped in the library to select the ball.
+- We also have a CERES C++ ultra basic optimizer to fit the parabola of a ball in free fall.
+
 ### CERES setup
 ```bash
 git clone https://ceres-solver.googlesource.com/ceres-solver
