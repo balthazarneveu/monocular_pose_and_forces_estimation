@@ -178,7 +178,7 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
 
 
 # Build the cost function
-def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False) -> np.ndarray:
+def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False, coeffs=[1., 1E-8, 1E-8, 0.01, 2.]) -> np.ndarray:
     if debug:
         print(f"{T}, {DT}, var = {var.shape}, observed_p = {observed_p.shape}")
     nq = arm_robot.model.nq
@@ -199,11 +199,10 @@ def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False) -> np.nd
     res_p[mask_p] = 2 * np.sqrt(np.abs(res_p[mask_p])) - 1
 
     res = np.concatenate([
-        (res_p),
-        0.0 * tv,
-        0.0 * ta,
-        0.01 * ttauq,
-        2 * (ttau - ttauq),
+        coeffs[0] * (res_p),
+        coeffs[1] * tv,
+        coeffs[2] * ta,
+        coeffs[3] * ttauq,
+        coeffs[4] * (ttau - ttauq),
     ])
-
     return res

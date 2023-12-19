@@ -49,7 +49,8 @@ def build_simulation(
     T: int = 30,
     DT: float = 1e-2,
     friction_coefficient: float = 0.1,
-    initial_torque_modulation: float = 0.0
+    initial_torque_modulation: float = 0.0,
+    static: bool = False,
 ) -> Tuple[list, list, list, list, list, list, list]:
     """Record ground truth values during a motion simulation
 
@@ -88,16 +89,15 @@ def build_simulation(
     gt_wrist_p = []
 
     for _ in range(T):
+        if static:
+            tauq = pin.rnea(arm_robot.model, arm_robot.data, q, vq, aq)
         # Iterative forward dynamics
-
         # Compute mass and non linear effects
         M = pin.crba(arm_robot.model, arm_robot.data, q)
         b = pin.nle(arm_robot.model, arm_robot.data, q, vq)
 
         # Compute accelleration
         aq = np.linalg.solve(M, tauq - b)
-
-        # tauq = pin.rnea(arm_robot.model, arm_robot.data, q, vq, aq)
 
         # Retrieve 3D points (forward kinematics)
         pin.framesForwardKinematics(arm_robot.model, arm_robot.data, q)
@@ -115,6 +115,8 @@ def build_simulation(
         gt_wrist_p.append(wrist_p.copy())
 
         q, vq = rk2_step(arm_robot, q, vq, tauq, DT)
-        tauq = -friction_coefficient*vq # Free fall with friction
+        
+        if not static:
+            tauq = - friction_coefficient * vq  # Free fall with friction
     return (gt_q, gt_vq, gt_aq, gt_tauq,
             gt_shoulder_p, gt_elbow_p, gt_wrist_p)
