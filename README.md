@@ -13,10 +13,9 @@ Review of the CVPR 2019 paper [Estimating 3D Motion and Forces of Person-Object 
 
 # :scroll: [Poster](/poster/poster_robotics_neveu_dinot.pdf)
 
+# :test_tube: Demo
 
-![](/report/figures/method_illustration.png)
-
-
+![](/report/figures/robotics_ultra_short_demo.gif)
 
 
 
@@ -36,8 +35,13 @@ Review of the CVPR 2019 paper [Estimating 3D Motion and Forces of Person-Object 
 
 
 --------------
-#### Our simplified setup
+## Our work
 
+![](/report/figures/method_illustration.png)
+
+
+--------------
+###  :muscle: Simplified setup
 ![](/report/figures/simplifications_logo.png)
 
 For simplification reasons, we studied a much simple problem making the following assumptions
@@ -46,8 +50,8 @@ For simplification reasons, we studied a much simple problem making the followin
 - :camera: the camera is assumed calibrated and standing on a tripod.
 
 
-### Video pipeline : inverse kinematics
-The current code is able to batch process videos and performs:
+### :camera: Video pipeline and inverse kinematics
+The current code is able to batch process videos and perform:
 - 2D pose and 3D pose estimation using Mediapipe (off the shelf)
   - RGB video :arrow_right: 3D & 2D joint positions
 - inverse kinematics from the 3D points
@@ -55,7 +59,7 @@ The current code is able to batch process videos and performs:
 - fits a camera pose in order to minimize 2d reprojection error
   - 2D points & 3D points from forward kinematics :arrow_right: Sequence of extrinsics matrices (just a 3D translation)
 
-### Dynamics: simulations
+### :test_tube: Dynamics: simulations
 We mostly did validate the inverse dynamics optimizer on simulations.
 
 |Free fall | Free fall + friction|
@@ -66,7 +70,7 @@ We mostly did validate the inverse dynamics optimizer on simulations.
 #### Known limitations
 There are still many missing points:
 - We do not minimize the 2D reprojection error while performing Inverse Kinematics
-- :muscle:  Many attempts have been made in order to reproduce the dynamics optimizer in order to recover the torques (shoulder and elbow). This is part of an extra notebook.
+- Many attempts have been made in order to reproduce the dynamics optimizer in order to recover the torques (shoulder and elbow). This is part of the extra notebook but so far clean torques cannot be retrieved properly from videos.
 
 
 -----
