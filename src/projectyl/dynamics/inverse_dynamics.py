@@ -178,7 +178,33 @@ def process_var(var, T, nq) -> Tuple[np.ndarray, np.ndarray]:
 
 
 # Build the cost function
-def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False, coeffs=[1., 1E-8, 1E-8, 0.01, 2.]) -> np.ndarray:
+def objective(
+    var: np.ndarray, observed_p: np.ndarray, T: int, DT: float,
+    arm_robot: ArmRobot, debug=False,
+    coeffs=[1., 1E-8, 1E-8, 0.01, 2.]
+) -> np.ndarray:
+    """Cost function for the inverse dynamics problem with regularization
+
+    Args:
+        var (np.ndarray): _description_
+        observed_p (np.ndarray): 3D Points (shoulder, elbow, wrist)
+        used in the data fidelity term
+        T (int): Total number of samples
+        DT (float): Time step (s)
+        arm_robot (ArmRobot): arm robot model (used for f)
+        debug (bool, optional): Display cost terms, return extra stuff. Defaults to False.
+        coeffs (list, optional): Cost function weights. 
+        - coeffs[0] : data fidelity
+        - coeffs[1] : velocity smoothness
+        - coeffs[2] : acceleration smoothness
+        - coeffs[3] : torque smoothness
+        - coeffs[4] : dynamics
+        Defaults to [1., 1E-8, 1E-8, 0.01, 2.].
+
+    Returns:
+        np.ndarray: Cost array to be used in a least square optimization. 
+        (data fidelity, velocity smoothness, acceleration smoothness, torque smoothness, dynamics)
+    """
     if debug:
         print(f"{T}, {DT}, var = {var.shape}, observed_p = {observed_p.shape}")
     nq = arm_robot.model.nq
@@ -205,4 +231,7 @@ def objective(var, observed_p, T, DT, arm_robot: ArmRobot, debug=False, coeffs=[
         coeffs[3] * ttauq,
         coeffs[4] * (ttau - ttauq),
     ])
+    if debug:
+        return res, np.linalg.norm(observed_p - tp), ttauq
+
     return res
