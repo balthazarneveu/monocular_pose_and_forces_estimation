@@ -90,6 +90,7 @@ Although we experimented with the contact recognizer component, we did not use i
 
 \subsection{Arm Model}
 \label{subsec:arm_model}
+
 We modelled the arm in Pinocchio~\cite{carpentier2019pinocchio}. The shoulder is represented by a spherical joint, allowing for three degrees 
 of freedom. This is expressed as a quaternion in the state vector \(q\). The elbow is represented by a revolute joint, which permits rotation 
 within a plane, resulting in a single degree of freedom. The state \(q\) therefore consists of five elements: the first four correspond to the 

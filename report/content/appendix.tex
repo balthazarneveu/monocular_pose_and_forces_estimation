@@ -95,3 +95,22 @@ the calibration file path:
 
 The core of the code for inverse kinematics and inverse dynamics is located in:
 ~\href{https://github.com/balthazarneveu/monocular_pose_and_forces_estimation/tree/main/src/projectyl/dynamics}{src/projectyl/dynamics}
+
+
+\subsection{Additional elements of discussion}
+\label{app:additional_discussion}
+We provide a few additional exploratory elements of discussion in this section.
+\begin{itemize}
+\item \textbf{Refining pose estimation: } Since the optimization serves as a "regularization term" on 2D and 3D poses as it constrains the dynamics of the movement to be feasible,
+one could think that the optimizer could be used to improve the 2D and 3D pose estimation networks (fine tune the 2D and 3D pose estimation networks from videos in the wild
+after regularizing the poses with the inverse dynamics optimizer).
+
+\item \textbf{Learning dynamics priors:}  Although it seems like an extremely challenging task (for future research), unrolling the optimization process could allow 
+training a prior on dynamics rather than handcrafting regularization terms. The idea of unrolling the optimization process has been applied
+to inverse problems in image restoration ~\cite{lecouat2021lucaskanade} ~\cite{Venkatakrishnan20135292013PP} and
+the key idea is that a deep convolutional neural network tries to project the noisy image solution (which fits the data term) back into the manifold of natural images (which is just a denoising step - serving as a regularization).
+A similar approach could be thought of: alternate between the optimization of data terms (reprojection errors and relaxed dynamics constraints) 
+but replace the regularization terms (smooth torque, smooth acceleration) by a neural network (temporal aspect means using a RNN or a transformer) which tries to project 
+the solution back into the manifold of feasible movements. Supervision would come from pose estimation which is nearly a mature field now and we would not need ground truths (on torques).
+One could just learn from data, use plenty of videos as inputs to learn the human dynamics priors.
+\end{itemize}
