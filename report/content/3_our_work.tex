@@ -230,12 +230,11 @@ Constraint enforcement was achieved by embedding them as penalty terms within th
 Our initial tests of the optimizer were conducted on simulated data, enabling us to assess its performance and fine-tune the loss weights.
 
 \noindent\textbf{Free Fall, Simulated.} We began with a simple free-fall scenario. The arm's initial configuration was horizontal, parallel to the ground, with an elbow angle of 
-\(\pi/4\) radians. This simulation was performed using the Runge–Kutta 2 method (resulting ground truth are depicted with dashed lines, sometimes hidden
-behind the estimation result).
+\(\pi/4\) radians. This simulation was performed using the Runge-Kutta 2 method (resulting ground truth are depicted with dashed lines).
 \begin{figure}
     \centering
     \includegraphics[width=8cm]{figures/inverse_dynamics_free_fall_case_no_smoothing.png}
-    \caption{Torque estimation without any regularization, showing erroneous non-zero torques despite accurate pose estimation.}
+    \caption{\textit{Free fall:} Torque estimation without any regularization, showing erroneous non-zero torques despite accurate pose estimation.}
     \label{fig:free_fall_torque_no_smoothing}
 \end{figure}
 
@@ -243,7 +242,7 @@ behind the estimation result).
 \begin{figure}
     \centering
     \includegraphics[width=8cm]{figures/inverse_dynamics_free_fall_case_torque_smooth_e-1.png}
-    \caption{Simulated ground truth data and estimated results of free fall with a mild torque smoothing.}
+    \caption{\textit{Free fall} - Simulated ground truth data and estimated results of free fall with a mild torque smoothing.}
     \label{fig:free_fall_torque_smoothing}
 \end{figure}
 
@@ -260,17 +259,17 @@ in~\cref{fig:free_fall_torque_smoothing}.
 
 
 These findings highlight the importance of torque regularization in maintaining physical plausibility, especially when dealing with 
-approximations issues.
+approximations issues. Oversampling the data could also help mitigate this issue but inplies a significant cost.
 
-\noindent\textbf{Free Fall with Friction, Simulated.} We tested the free fall with friction, represented by the equation 
+\noindent\textit{Free Fall with Friction, Simulated.} We tested the free fall with friction, represented by the equation 
 \(\tau_m = -0.1\dot{q}\). This test aimed to evaluate the optimizer's ability to reconstruct non-trivial torque values. Ground truth and results, 
 shown in~\cref{fig:free_fall_friction}, indicate that while the results are not flawless, 
 they demonstrate the optimizer's capability to reconstruct coherent torques.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \includegraphics[width=8cm]{figures/inverse_dynamics_friction_case_medium_smoothing.png}
-    \caption{Simulated free fall with friction: ground truth data versus estimation.}
+    \caption{\textit{Free fall with friction} - Simulated: ground truth data versus estimation.}
     \label{fig:free_fall_friction}
 \end{figure}
 
@@ -285,10 +284,10 @@ trade-off between the 3D consistency loss \(l_{3D}\) and the torque regularizati
 significant errors in both the estimated 
 position and the computed torque, as shown in~\cref{fig:static}.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \includegraphics[width=8cm]{figures/inverse_dynamics_static_case.png}
-    \caption{Simulated static arm: ground truth data versus estimated results}
+    \caption{STATIC ARM simulated : ground truth data versus estimated results}
     \label{fig:static}
 \end{figure}
 

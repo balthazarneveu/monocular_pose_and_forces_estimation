@@ -43,13 +43,11 @@ def replay_whole_sequence(q_list, viz):
 
 @interactive(
     # frame_idx=(0., [0., 1.], "frame_idx",  0.000001),
-    frame_idx=[0, 500, 1, 0],
-    mode=(0, [0, 10], "index [0 for estimation -1 for GT]"),
+    frame_idx=[0, 80, 1, 0],
+    q_key=("estimation", ["estimation", "groundtruth", "initial"], "Replay motion estimation or groundtruth"),
 )
-def seclect_replay(q_dict, frame_idx=0., mode=0, global_params={}):
-    q_keys = list(q_dict.keys())
-    q_key = q_keys[min(mode, len(q_keys)-1)]
-    q_list = q_dict[q_key]
+def select_replay(q_dict, frame_idx=0., q_key=0, global_params={}):
+    q_list = q_dict.get(q_key, q_dict["estimation"])
     logging.info(f"Replay mode {q_key} at index {frame_idx}")
     global_params["frame_idx"] = int(min(frame_idx, len(q_list)-1))  # int(frame_idx*(len(q_list)-1))
     global_params["q_key"] = q_key
@@ -82,13 +80,13 @@ def display_curve(q_dict, global_params={}):
     curves.append(SingleCurve(x=[ts, ts], y=[-1, 1], style="--k", label=None))
     return Curve(
         curves,
-        title="Q state [rad]", xlabel=f"Time index - {ts:d}", ylabel="Q [rad]",
+        title="Q state", xlabel=f"Time index - {ts:d}", ylabel="Q [rad]",
         grid=True
     )
 
 
 def replay_sequence(q_dict, viz):
-    q_list = seclect_replay(q_dict)
+    q_list = select_replay(q_dict)
     meshcat_replay(q_list, viz)
     curve = display_curve(q_dict)
 
