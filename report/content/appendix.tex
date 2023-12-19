@@ -47,12 +47,6 @@ Remark: \textit{Jacobian matrix provides the 3D linear velocity
 (and axis-angle angular velocity) at a given joint location when we apply a variation $\delta q_i$ on a specific component $q_i$ of the configuration state $q$.
 Note that although the Jacobian provided in Pinocchio provides linear and angular velocities derivatives, we only use the 3D linear velocity part.}
 
-$\min_x \|J.P^{\textrm{3D}} - q\|_2^2.$
-
-$ P_0 = I_{nq} $
-
-$ P_1 = I_{nq} - J_1^+ J_1 $
-
 \subsection{Code description}
 \label{app:code}
 The code is available at:

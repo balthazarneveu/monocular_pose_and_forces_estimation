@@ -10,6 +10,7 @@ a simplification that allowed us to tackle the fundamental
 aspects of the methodology without the computational burden of full-body modeling.
 
 Our code is available and documented on~\href{https://github.com/balthazarneveu/monocular_pose_and_forces_estimation}{GitHub}.
+Please refer to ~\cref{app:code} for more details.
 
 \subsection{Overview}
 \label{subsec:overview}
@@ -108,7 +109,7 @@ To get proper initializations to feed to the inverse dynamics optimizer, we reli
 From a sequence of 3D positions of the arm joints, we used the 
 ~\href{https://github.com/balthazarneveu/monocular_pose_and_forces_estimation/blob/main/src/projectyl/dynamics/inverse_kinematics.py}{inverse kinematics approach} to estimate the joint angles.
 Inverse kinematics is highly relying on the Pinocchio library ~\cite{carpentier2019pinocchio} to compute 
-the Jacobian and perform forward kinematics (compute the 3D positions  $M(t)_{j}$ of the joints from the joint angles $q(t)$).
+the Jacobian and perform forward kinematics (compute the 3D positions  $P(t)_{j}$ of the joints from the joint angles $q(t)$). Refer to ~\cref{app:inverse_kinematics} for more details.
 % @TODO: Add equations for IK with the 2 tasks (elbow and wrist 3D positions)
 
 Devil is in the details, and we had to be careful about the following points while implementing:
