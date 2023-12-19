@@ -199,6 +199,7 @@ def objective(
         - coeffs[2] : acceleration smoothness
         - coeffs[3] : torque smoothness
         - coeffs[4] : dynamics
+
         Defaults to [1., 1E-8, 1E-8, 0.01, 2.].
 
     Returns:

@@ -105,7 +105,7 @@ def plot_optimization_curves(states_to_plot: list, nq: int, mode: str = "qt", ti
     if n_fig == 1:
         axs = [axs]
 
-    for state, label, style in states_to_plot:
+    for state, label, style, line_size in states_to_plot:
         graph_id = 0
         ruby_mode = False
         if nq-4 == 2:
@@ -115,21 +115,23 @@ def plot_optimization_curves(states_to_plot: list, nq: int, mode: str = "qt", ti
             for dim in range(3):
                 ax.plot(state[:, 0+dim], style+FROZEN_COLOR_CODE[dim],
                         # alpha=0.6,
+                        linewidth=line_size,
                         label=f"q shoulder {label} {dim}")  # skip index 3 (quaternion normalization)
             if ruby_mode:
                 ax.plot(np.arccos(state[:, 4]), style+FROZEN_COLOR_CODE[3], label=f"q elbow {label}")
                 # ax.plot(np.arcsin(state[:, 5]), style+FROZEN_COLOR_CODE[4], label=f"q elbow {label}")
             else:
-                ax.plot(state[:, nq-1], style+FROZEN_COLOR_CODE[3], label=f"q elbow {label}")
+                ax.plot(state[:, nq-1], style+FROZEN_COLOR_CODE[3], linewidth=line_size, label=f"q elbow {label}")
             ax.set_title("Configuration state q" + q_title)
             graph_id += 1
         if "t" in mode:
             ax = axs[graph_id]
             for dim in range(3):
                 ax.plot(state[:, nq+dim], style+FROZEN_COLOR_CODE[dim],
+                        linewidth=line_size,
                         label=f"Torque shoulder {label} {dim}")
             ax.set_title("Torque" + t_title)
-            ax.plot(state[:, -1], style+FROZEN_COLOR_CODE[3], label=f"Torque elbow {label}")
+            ax.plot(state[:, -1], style+FROZEN_COLOR_CODE[3], linewidth=line_size, label=f"Torque elbow {label}")
             graph_id += 1
     for i in range(len(axs)):
         axs[i].legend()
