@@ -15,7 +15,7 @@ Review of the CVPR 2019 paper [Estimating 3D Motion and Forces of Person-Object 
 
 # :test_tube: Demo
 
-![](/report/figures/robotics_ultra_short_demo.gif)
+![overview](/report/figures/robotics_ultra_short_demo.gif)
 
 
 
@@ -207,6 +207,8 @@ It is no totally unexpected to have such an error:
 -----
 
 ## :gift: Extra
+
+[Demo Video](https://youtu.be/L5QOJOxHj3Y)
 
 In case you'd like to dig in the original author's implementation, we provide a functional fork of [Pytorch OpenPose](https://github.com/MattX20/pytorch-openpose) which allows batch processing on videos.
 
