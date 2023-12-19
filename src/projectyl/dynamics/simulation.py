@@ -58,7 +58,8 @@ def build_simulation(
         arm_robot (ArmRobot): Arm robot model
         T (int, optional): Total duration (in intervals). Defaults to 30.
         DT (float, optional): time interval. Defaults to 1e-2.
-        friction_coefficient (float, optional): Friction coefficient. Defaults to 0.1.
+        friction_coefficient (float, optional): Friction coefficient. Defaults to 0.1
+        Note: use friction=0 to do a free fall.
         initial_torque_modulation (float, optional): Initial torque modulation. Defaults to 0.0.
     Returns:
         Tuple[list, list, list, list, list, list, list]:

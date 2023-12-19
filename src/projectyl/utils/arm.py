@@ -114,18 +114,19 @@ def plot_optimization_curves(states_to_plot: list, nq: int, mode: str = "qt", ti
             ax = axs[graph_id]
             for dim in range(3):
                 ax.plot(state[:, 0+dim], style+FROZEN_COLOR_CODE[dim],
+                        # alpha=0.6,
                         label=f"q shoulder {label} {dim}")  # skip index 3 (quaternion normalization)
             if ruby_mode:
                 ax.plot(np.arccos(state[:, 4]), style+FROZEN_COLOR_CODE[3], label=f"q elbow {label}")
                 # ax.plot(np.arcsin(state[:, 5]), style+FROZEN_COLOR_CODE[4], label=f"q elbow {label}")
             else:
-                ax.plot(state[:, nq-1], style+FROZEN_COLOR_CODE[3], label=f"q elbow {label} cos")
+                ax.plot(state[:, nq-1], style+FROZEN_COLOR_CODE[3], label=f"q elbow {label}")
             ax.set_title("Q state")
             graph_id += 1
         if "t" in mode:
             ax = axs[graph_id]
             for dim in range(3):
-                ax.plot(state[:, nq+1+dim], style+FROZEN_COLOR_CODE[dim],
+                ax.plot(state[:, nq+dim], style+FROZEN_COLOR_CODE[dim],
                         label=f"Torque shoulder {label} {dim}")
             ax.set_title("Torque")
             ax.plot(state[:, -1], style+FROZEN_COLOR_CODE[3], label=f"Torque elbow {label}")
