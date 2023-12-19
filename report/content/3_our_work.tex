@@ -247,7 +247,7 @@ Our initial tests of the optimizer were conducted on simulated data, enabling us
 \end{figure}
 
 We fed the optimizer with the ground truth 3D poses and initial state vectors \(q_1, \ldots, q_T\) and zero torques. Without torque 
-regularization, the optimizer yielded physically implausible torque estimations, despite low pose error, as shown in~\cref{fig:free_fall_no_torque}.
+regularization, the optimizer yielded physically implausible torque estimations, despite low pose error, as shown in~\cref{fig:free_fall_torque_no_smoothing}.
 
 
 These inaccuracies are attributed to the central difference approximation for velocities and accelerations, and potential undersampling, which 
@@ -282,12 +282,12 @@ This static test uncovers another limitation within the optimization framework. 
 trade-off between the 3D consistency loss \(l_{3D}\) and the torque regularization 
 \(l_{\text{torque}}\). But if the torque is important, like in this case, this can result in 
 significant errors in both the estimated 
-position and the computed torque, as shown in~\cref{fig:static}.
+position ($\approx$ 8cm) and the computed torque, as shown in~\cref{fig:static}.
 
 \begin{figure}
     \centering
     \includegraphics[width=8cm]{figures/inverse_dynamics_static_case.png}
-    \caption{STATIC ARM simulated : ground truth data versus estimated results}
+    \caption{\textit{Static arm} simulated : ground truth data versus estimated results}
     \label{fig:static}
 \end{figure}
 
