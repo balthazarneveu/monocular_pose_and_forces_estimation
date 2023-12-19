@@ -21,6 +21,37 @@ it is needed to rescale the focal length acordingly $f_{\text{pix}}^{\text{video
 Calibration method provides a estimated focal length of $1690px$ which is close enough to the specifications.
 We assume the camera to be a pinhole and neglect radial distortion.
 
+\subsection{Inverse kinematics}
+\label{app:inverse_kinematics}
+The goal of Inverse Kinematics applied to our arm problem is to find the $q$ states so that the elbow ($E$) and wrist ($W$)
+reach 3D target positions $P_{E}$ and $P_{W}$.
+This iterative process is performed by following these steps:
+\begin{itemize}
+    \item computing the 3D positions of the elbow $\hat{P_{E}}(q)$ and wrist $\hat{P_{W}}(q)$ from the current joint states $q$ using forward kinematics
+    \item computing the Jacobians $J_{E}$ and $J_{W}$ of the arm model at the current joint states $q$.
+    \item Compute the 3D error vectors 
+        \subitem $\Delta_{E} =P_{E} - \hat{P_{E}}(q)$ 
+        \subitem $\Delta_{W} =P_{W} - \hat{P_{W}}(q)$. 
+    \item We want the elbow to reach the target so we are willing to move the arm with a configuration state increment 
+    $\delta q_{E}$ which statisfies $\min_{\delta q_{E}} \|J_{E}.\delta q_{E} - \Delta_{E}\|_2^2.$
+    \item This is achieved by computing the pseudo-inverse $J_{E}^+$ of the Jacobian and computing $\delta q_{E} = J_{E}^+ \Delta_{E}$
+    \item We also need to move the wrist in the right direction without undoing the elbow movement. This is performed by making an increment for the wrist in the orthogonal null space of the elbow's Jacobian.
+    \subitem . Find $\delta q_{W}$ , $\min_{\delta q_{W}\in Ker(J_{E})} \|J_{W} (\delta q_{E} + \delta q_{W}) - \Delta_{W}\|_2^2$
+    \subitem . Forcing a vector to be in $Ker(J_{E})$ is achieved using the projection $P_{E}=I-J_{E}^{+}J_{E}$
+    \textit{(eg. $\forall \delta q$, $P_{E}.\delta q$ will not change the elbow position)}
+    \subitem . $\delta q_{W} = \delta q_{E} + {(J_{W}P_{E})}^{+} (\Delta_{W} - J_{W} \delta q_{E})$
+    \item Finally update the joint states $q$ with the increment $\delta q_{W} \Delta T$ where $\Delta T$ defines the convergence speed.
+\end{itemize}
+
+Remark: \textit{Jacobian matrix provides the 3D linear velocity 
+(and axis-angle angular velocity) at a given joint location when we apply a variation $\delta q_i$ on a specific component $q_i$ of the configuration state $q$.
+Note that although the Jacobian provided in Pinocchio provides linear and angular velocities derivatives, we only use the 3D linear velocity part.}
+
+$\min_x \|J.P^{\textrm{3D}} - q\|_2^2.$
+
+$ P_0 = I_{nq} $
+
+$ P_1 = I_{nq} - J_1^+ J_1 $
 
 \subsection{Code description}
 \label{app:code}
